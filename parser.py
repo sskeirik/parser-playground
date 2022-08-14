@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import TypeVar, Callable, Any
 from copy import deepcopy
@@ -16,9 +17,15 @@ class NonTerm(Symbol):
     def __repr__(self): return self.name
 
 @dataclass(frozen=True)
-class Term(Symbol):
+class PseudoTerm(Symbol): pass
+
+@dataclass(frozen=True)
+class Term(PseudoTerm):
     name: str
     def __repr__(self): return f'"{self.name}"'
+
+@dataclass(frozen=True)
+class Epsilon(PseudoTerm): pass
 
 @dataclass(frozen=True)
 class Rule:
@@ -131,6 +138,30 @@ nullable_0 = closure(nullable_1, True)
 def nullable(g: Grammar) -> set[NonTerm]:
     return nullable_0(set(), g)
 
+def first_1(first: defaultdict[NonTerm, set[PseudoTerm]], g: Grammar):
+    for n, rules in g.rules.items():
+        for rule in rules:
+            if len(rule) == 0:
+                first[n].add(Epsilon())
+            else:
+                for sym in rule:
+                    if isTerm(sym):
+                        first[n].add(sym)
+                        break
+                    elif Epsilon() in first[sym]:
+                        first[n].update(first[sym] - { Epsilon() })
+                    else:
+                        first[n].update(first[sym])
+                        break
+                else:
+                    first[n].add(Epsilon())
+    return first
+
+first_0 = closure(first_1, True)
+
+def first(g: Grammar) -> dict[NonTerm, set[PseudoTerm]]:
+    return first_0(defaultdict(set), g)
+
 if __name__ == "__main__":
     g = Grammar(NonTerm("A"),
                { NonTerm("A") : { (Term("P")   ,) },
@@ -151,6 +182,9 @@ if __name__ == "__main__":
 
     g_2 = shrink(g_1, r)
     print(g_2)
+
+    f_1 = first(g_2)
+    print(f_1)
 
     g_s = Grammar(NonTerm("S"),
                   { NonTerm("S") : { (NonTerm("S"), NonTerm("S")),
@@ -173,3 +207,6 @@ if __name__ == "__main__":
     print(g_s)
 
     print(nullable(g_s))
+
+    f_2 = first(g_s)
+    print(f_2)
