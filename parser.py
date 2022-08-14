@@ -162,6 +162,27 @@ first_0 = closure(first_1, True)
 def first(g: Grammar) -> dict[NonTerm, set[PseudoTerm]]:
     return first_0(defaultdict(set), g)
 
+def follow_1(follow: defaultdict[NonTerm, set[PseudoTerm]], gfp):
+    g, first = gfp
+    for n, rules in g.rules.items():
+        for rule in rules:
+            if len(rule) == 0: continue
+            for i in range(len(rule)-1):
+                curr, nxt = rule[i], rule[i+1]
+                if isTerm(curr): continue
+                if isTerm(nxt): follow[curr].add(nxt)
+                else:           follow[curr].update(first[nxt] - { Epsilon() })
+            last = rule[-1]
+            if isNonTerm(last): follow[last].update(follow[n])
+    return follow
+
+follow_0 = closure(follow_1, True)
+
+def follow(g: Grammar, first):
+    d = defaultdict(set)
+    d[g.start].add(Term("$"))
+    return follow_0(d, (g, first))
+
 if __name__ == "__main__":
     g = Grammar(NonTerm("A"),
                { NonTerm("A") : { (Term("P")   ,) },
@@ -185,6 +206,9 @@ if __name__ == "__main__":
 
     f_1 = first(g_2)
     print(f_1)
+
+    flw_1 = follow(g_2, f_1)
+    print(flw_1)
 
     g_s = Grammar(NonTerm("S"),
                   { NonTerm("S") : { (NonTerm("S"), NonTerm("S")),
@@ -210,3 +234,6 @@ if __name__ == "__main__":
 
     f_2 = first(g_s)
     print(f_2)
+
+    flw_2 = follow(g_s, f_2)
+    print(flw_2)
