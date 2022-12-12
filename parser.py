@@ -33,17 +33,21 @@ class Rule:
     rhs: tuple[Symbol, ...]
 
     def __repr__(self):
-        res = self.lhs.name + " := "
+        prefix = self.lhs.name + " := "
+        res = ""
         run = False
         for s in self.rhs:
             term = isTerm(s)
-            if term and not run: res += '"'
-            elif run: res += '" '
-            else: res += ' '
+            if term:
+                if run: res += ''
+                else:   res += ' "'
+            else:
+                if run: res += '" '
+                else:   res += ' '
             res += s.name
             run = term
         if run: res += '"'
-        return res
+        return prefix + res.strip()
 
 @dataclass
 class Grammar:
