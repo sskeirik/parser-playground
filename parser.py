@@ -8,6 +8,8 @@ from copy import deepcopy
 T = TypeVar('T')
 G = TypeVar('G')
 
+MDOT = " · "
+
 @dataclass(frozen=True)
 class Symbol: pass
 
@@ -39,6 +41,23 @@ class Rule:
             if term: res += f' "{s.name}"'
             else:    res += f' {s.name}'
         return res
+
+class GrammarSlot:
+    rule:  Rule
+    index: int
+    def __init__(self, rule, index):
+        if index > len(rule.rhs): raise ValueError("Grammar slot index must be less than or equal to the rule RHS symbols")
+        self.rule, self.index = rule, index
+    def __repr__(self):
+        res = self.rule.lhs.name + " :="
+        for i,s in enumerate(self.rule.rhs):
+            term = isTerm(s)
+            sep = ' '
+            if i == self.index: sep = MDOT
+            if term: res += f'{sep}"{s.name}"'
+            else:    res += f'{sep}{s.name}'
+        if self.index == len(self.rule.rhs): res += MDOT
+        return res.strip()
 
 @dataclass
 class Grammar:
@@ -186,6 +205,18 @@ if __name__ == "__main__":
                                   (NonTerm("B"),) }
                })
     print(g)
+
+    r1 = Rule(NonTerm("A"), (Term("P"), NonTerm("R"), Term("Q")))
+    r2 = Rule(NonTerm("A"), (NonTerm("P"), NonTerm("Q")))
+    print(r1)
+    print(r2)
+    print(GrammarSlot(r1,0))
+    print(GrammarSlot(r1,1))
+    print(GrammarSlot(r1,2))
+    print(GrammarSlot(r1,3))
+    print(GrammarSlot(r2,0))
+    print(GrammarSlot(r2,1))
+    print(GrammarSlot(r2,2))
 
     p = productive(g)
     print(p)
