@@ -42,12 +42,12 @@ class Rule:
             else:    res += f' {s.name}'
         return res
 
+@dataclass(frozen=True)
 class GrammarSlot:
     rule:  Rule
     index: int
-    def __init__(self, rule, index):
-        if index > len(rule.rhs): raise ValueError("Grammar slot index must be less than or equal to the rule RHS symbols")
-        self.rule, self.index = rule, index
+    def __post_init__(self):
+        if self.index > len(self.rule.rhs): raise ValueError("Grammar slot index must be less than or equal to the rule RHS symbols")
     def __repr__(self):
         res = self.rule.lhs.name + " :="
         for i,s in enumerate(self.rule.rhs):
@@ -217,6 +217,11 @@ if __name__ == "__main__":
     print(GrammarSlot(r2,0))
     print(GrammarSlot(r2,1))
     print(GrammarSlot(r2,2))
+    try:
+        GrammarSlot(r2,3)
+        raise Exception("A ValueError should have been raised")
+    except ValueError:
+        pass
 
     p = productive(g)
     print(p)
