@@ -121,6 +121,16 @@ class CallReturn:
         if self.index < 0:
             raise ValueError("CallReturn index must be non-negative")
 
+@dataclass(frozen=True)
+class CallReturnAction:
+    symbol: NonTerm
+    index: int
+    returnIndex: int
+
+    def __post_init__(self):
+        if self.index < 0 or self.returnIndex < 0:
+            raise ValueError("CallReturnAction indices must be non-negative")
+
 @dataclass
 class GLLParser:
     grammar: Grammar
@@ -128,6 +138,7 @@ class GLLParser:
     workingSet: set[Descriptor]
     totalSet: set[Descriptor]
     callReturnForest: dict[CallLocation, CallReturn]
+    contingentReturnSet: set[CallReturnAction]
 
     def __init__(self, grammar, parseInput):
         self.grammar    = grammar
