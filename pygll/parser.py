@@ -10,6 +10,9 @@ G = TypeVar('G')
 
 MDOT = " · "
 
+# Grammar Representation
+# ######################
+
 @dataclass(frozen=True)
 class Symbol: pass
 
@@ -72,22 +75,14 @@ class Grammar:
         res += ")"
         return res
 
+# utility functions
+# #################
+
 def isTerm(s: Symbol) -> bool:
     return isinstance(s, Term)
 
 def isNonTerm(s: Symbol) -> bool:
     return isinstance(s, NonTerm)
-
-def shrink_rules(rules: set[tuple[Symbol, ...]], p: set[NonTerm]) -> set[tuple[Symbol, ...]]:
-    res = set()
-    for rule in rules:
-        if not any(isNonTerm(sym) and sym not in p for sym in rule):
-            res.add(rule)
-    return res
-
-def shrink(g: Grammar, p: set[NonTerm]) -> Grammar:
-    new_rules = { n : shrink_rules(rules, p) for n, rules in g.rules.items() if n in p }
-    return Grammar(g.start, new_rules)
 
 def closure(f: Callable[[set[T], G], set[T]], inc: bool) -> Callable[[set[T], G], set[T]]:
 
@@ -109,6 +104,20 @@ def closure(f: Callable[[set[T], G], set[T]], inc: bool) -> Callable[[set[T], G]
        return s
 
     return closure_f
+
+# grammar preprocessing
+# #####################
+
+def shrink_rules(rules: set[tuple[Symbol, ...]], p: set[NonTerm]) -> set[tuple[Symbol, ...]]:
+    res = set()
+    for rule in rules:
+        if not any(isNonTerm(sym) and sym not in p for sym in rule):
+            res.add(rule)
+    return res
+
+def shrink(g: Grammar, p: set[NonTerm]) -> Grammar:
+    new_rules = { n : shrink_rules(rules, p) for n, rules in g.rules.items() if n in p }
+    return Grammar(g.start, new_rules)
 
 def productive_rule(rule: tuple[Symbol, ...], p: set[NonTerm]) -> bool:
     return all(isTerm(s) or s in p for s in rule)
@@ -137,6 +146,16 @@ reachable_0 = closure(reachable_1, True)
 
 def reachable(g: Grammar) -> set[NonTerm]:
     return reachable_0({ g.start }, g)
+
+def preprocess(g: Grammar) -> Grammar:
+    p  = productive(g)
+    g1 = shrink(g, p)
+    r  = reachable(g1)
+    g2 = shrink(g1, r)
+    return g
+
+# grammar prediction
+# ##################
 
 def nullable_1(null: set[NonTerm], g: Grammar) -> set[NonTerm]:
     for n, rules in g.rules.items():
