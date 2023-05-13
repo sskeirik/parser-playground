@@ -137,7 +137,7 @@ class GLLParser:
     parseInput: str
     workingSet: set[Descriptor]
     totalSet: set[Descriptor]
-    callReturnForest: dict[CallLocation, CallReturn]
+    callReturnForest: dict[CallLocation, set[CallReturn]]
     contingentReturnSet: set[CallReturnAction]
 
     def __init__(self, grammar, parseInput):
@@ -146,7 +146,10 @@ class GLLParser:
         self.workingSet = {}
         self.totalSet   = {}
         self.callReturnForest = dict()
-        for rule in grammar[grammar.start]:
+        self.ntAdd(grammar.start)
+
+    def ntAdd(nonterm):
+        for rule in grammar[nonterm]:
           addDesc(Descriptor(GrammarSlot(rule, 0), 0, 0))
 
     def addDesc(desc):
