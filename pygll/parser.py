@@ -45,23 +45,6 @@ class Rule:
             else:    res += f' {s.name}'
         return res
 
-@dataclass(frozen=True)
-class GrammarSlot:
-    rule:  Rule
-    index: int
-    def __post_init__(self):
-        if self.index > len(self.rule.rhs): raise ValueError("Grammar slot index must be less than or equal to the rule RHS symbols")
-    def __repr__(self):
-        res = self.rule.lhs.name + " :="
-        for i,s in enumerate(self.rule.rhs):
-            term = isTerm(s)
-            sep = ' '
-            if i == self.index: sep = MDOT
-            if term: res += f'{sep}"{s.name}"'
-            else:    res += f'{sep}{s.name}'
-        if self.index == len(self.rule.rhs): res += MDOT
-        return res.strip()
-
 @dataclass
 class Grammar:
     start: NonTerm
@@ -74,6 +57,48 @@ class Grammar:
                 res += "  " + repr(Rule(n, rule)) + "\n"
         res += ")"
         return res
+
+# GLL Data Structure
+# ##################
+
+@dataclass(frozen=True)
+class GrammarSlot:
+    rule: Rule
+    ruleIndex: int
+    def __post_init__(self):
+        if self.ruleIndex > len(self.rule.rhs): raise ValueError("Grammar slot ruleIndex must be less than or equal to the rule RHS symbols")
+    def __repr__(self):
+        res = self.rule.lhs.name + " :="
+        for i,s in enumerate(self.rule.rhs):
+            term = isTerm(s)
+            sep = ' '
+            if i == self.ruleIndex: sep = MDOT
+            if term: res += f'{sep}"{s.name}"'
+            else:    res += f'{sep}{s.name}'
+        if self.ruleIndex == len(self.rule.rhs): res += MDOT
+        return res.strip()
+
+@dataclass(frozen=True)
+class Descriptor:
+    slot: GrammarSlot
+    index: int
+    returnIndex: int
+
+@dataclass(frozen=True)
+class NonTermLoc:
+    symbol: NonTerm
+    index: int
+
+@dataclass(frozen=True)
+class NonTermReturn:
+    slot: GrammarSlot
+    returnIndex: int
+
+@dataclass
+class GLLParseState:
+    parseInput: str
+    descriptors: set[Descriptor]
+    callReturnForest: dict[NonTermLoc, NonTermReturn]
 
 # utility functions
 # #################
