@@ -8,8 +8,6 @@ from copy import deepcopy
 T = TypeVar('T')
 G = TypeVar('G')
 
-MDOT = " · "
-
 # Grammar Representation
 # ######################
 
@@ -119,7 +117,7 @@ def shrink(g: Grammar, p: set[NonTerm]) -> Grammar:
 def productive_rule(rule: tuple[Symbol, ...], p: set[NonTerm]) -> bool:
     return all(isTerm(s) or s in p for s in rule)
 
-def productive_1(p: set[NonTerm], g: Grammar) -> set[NonTerm]:
+def _productive_1(p: set[NonTerm], g: Grammar) -> set[NonTerm]:
     for n, rules in g.rules():
         if n in p: continue
         if any(productive_rule(rule, p) for rule in rules):
@@ -127,27 +125,27 @@ def productive_1(p: set[NonTerm], g: Grammar) -> set[NonTerm]:
             continue
     return p
 
-productive_0 = closure(productive_1, True)
+_productive_0 = closure(_productive_1, True)
 
 def productive(g: Grammar) -> set[NonTerm]:
-    return productive_0(set(), g)
+    return _productive_0(set(), g)
 
-def reachable_1(r: set[NonTerm], g: Grammar) -> set[NonTerm]:
+def _reachable_1(r: set[NonTerm], g: Grammar) -> set[NonTerm]:
     for n, rules in g.rules():
         if n not in r: continue
         for rule in rules:
             r.update({ s for s in rule if isNonTerm(s) })
     return r
 
-reachable_0 = closure(reachable_1, True)
+_reachable_0 = closure(_reachable_1, True)
 
 def reachable(g: Grammar) -> set[NonTerm]:
-    return reachable_0({ g.start }, g)
+    return _reachable_0({ g.start }, g)
 
 # grammar prediction
 # ##################
 
-def nullable_1(null: set[NonTerm], g: Grammar) -> set[NonTerm]:
+def _nullable_1(null: set[NonTerm], g: Grammar) -> set[NonTerm]:
     for n, rules in g.rules():
         if n in null: continue
         for rule in rules:
@@ -156,12 +154,12 @@ def nullable_1(null: set[NonTerm], g: Grammar) -> set[NonTerm]:
                 break
     return null
 
-nullable_0 = closure(nullable_1, True)
+_nullable_0 = closure(_nullable_1, True)
 
 def nullable(g: Grammar) -> set[NonTerm]:
-    return nullable_0(set(), g)
+    return _nullable_0(set(), g)
 
-def first_1(first: defaultdict[NonTerm, set[PseudoTerm]], g: Grammar):
+def _first_1(first: defaultdict[NonTerm, set[PseudoTerm]], g: Grammar):
     for n, rules in g.rules():
         for rule in rules:
             if len(rule) == 0:
@@ -180,12 +178,12 @@ def first_1(first: defaultdict[NonTerm, set[PseudoTerm]], g: Grammar):
                     first[n].add(Epsilon())
     return first
 
-first_0 = closure(first_1, True)
+_first_0 = closure(_first_1, True)
 
 def first(g: Grammar) -> dict[NonTerm, set[PseudoTerm]]:
-    return first_0(defaultdict(set), g)
+    return _first_0(defaultdict(set), g)
 
-def follow_1(follow: defaultdict[NonTerm, set[PseudoTerm]], gfp: tuple[Grammar, set[PseudoTerm]]):
+def _follow_1(follow: defaultdict[NonTerm, set[PseudoTerm]], gfp: tuple[Grammar, set[PseudoTerm]]):
     g, first = gfp
     for n, rules in g.rules():
         for rule in rules:
@@ -199,12 +197,12 @@ def follow_1(follow: defaultdict[NonTerm, set[PseudoTerm]], gfp: tuple[Grammar, 
             if isNonTerm(last): follow[last].update(follow[n])
     return follow
 
-follow_0 = closure(follow_1, True)
+_follow_0 = closure(_follow_1, True)
 
 def follow(g: Grammar, first: set[PseudoTerm]):
     d = defaultdict(set)
     d[g.start].add(Term("$"))
-    return follow_0(d, (g, first))
+    return _follow_0(d, (g, first))
 
 # grammar initialization routines
 # ###############################
@@ -222,7 +220,7 @@ class GrammarPredictor:
     first: set[PseudoTerm]
     follow: set[PseudoTerm]
 
-    def __init__(self, grammar, first, follow):
+    def __init__(self, grammar: Grammar, first: set[PseudoTerm], follow: set[PseudoTerm]):
         self.grammar = preprocess(grammar)
         self.first   = first(g)
         self.follow  = follow(g, first)

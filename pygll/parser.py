@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
-from .grammar import *
+from dataclasses import dataclass
+from .grammar import Term, NonTerm, isTerm, isNonTerm, Rule, GrammarPredictor
+
+MDOT = " · "
 
 # GLL Data Structure
 # ##################
@@ -70,7 +73,7 @@ class GLLParser:
     callReturnForest: dict[CallLocation, set[CallReturn]]
     contingentReturnSet: set[CallReturnAction]
 
-    def __init__(self, grammar, parseInput, processGrammar=False):
+    def __init__(self, grammar, parseInput):
         self.grammar    = grammar
         self.parseInput = parseInput
         self.workingSet = {}

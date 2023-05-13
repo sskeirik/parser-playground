@@ -1,4 +1,5 @@
 import sys
+from ..grammar import *
 from ..parser import *
 
 def test_parser():
