@@ -227,3 +227,8 @@ class GrammarPredictor:
         self.grammar   = preprocess(grammar)
         self.firstMap  = buildFirst(g)
         self.followMap = buildFollow(g, self.firstMap)
+
+    def testSelect(self, term: Term, nonterm: NonTerm, word: Iterable[Symbol]):
+        wordFirst = first(self.firstMap, word)
+        return ( term in wordFirst ) \
+            or ( Epsilon() in wordFirst and term in followMap[nonterm] )
