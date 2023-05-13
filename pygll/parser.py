@@ -48,15 +48,29 @@ class Rule:
 @dataclass
 class Grammar:
     start: NonTerm
-    rules: dict[NonTerm, set[tuple[Symbol, ...]]]
+    ruleDict: dict[NonTerm, set[tuple[Symbol, ...]]]
 
     def __repr__(self):
         res = f"Grammar(\n  start = {self.start},\n"
-        for n, rules in self.rules.items():
+        for n, rules in self.ruleDict.items():
             for rule in rules:
                 res += "  " + repr(Rule(n, rule)) + "\n"
         res += ")"
         return res
+
+    def keys(self):
+        return self.ruleDict.keys()
+
+    def items(self):
+        return self.ruleDict.items()
+
+    def rules(self):
+        return self.ruleDict.items()
+
+    def __getitem__(self, nonterm):
+        if not isinstance(nonterm, NonTerm):
+            raise ValueError("Grammar rule lookup must use valid non-terminal")
+        return self.ruleDict.get(nonterm, set())
 
 # GLL Data Structure
 # ##################
@@ -154,14 +168,14 @@ def shrink_rules(rules: set[tuple[Symbol, ...]], p: set[NonTerm]) -> set[tuple[S
     return res
 
 def shrink(g: Grammar, p: set[NonTerm]) -> Grammar:
-    new_rules = { n : shrink_rules(rules, p) for n, rules in g.rules.items() if n in p }
+    new_rules = { n : shrink_rules(rules, p) for n, rules in g.rules() if n in p }
     return Grammar(g.start, new_rules)
 
 def productive_rule(rule: tuple[Symbol, ...], p: set[NonTerm]) -> bool:
     return all(isTerm(s) or s in p for s in rule)
 
 def productive_1(p: set[NonTerm], g: Grammar) -> set[NonTerm]:
-    for n, rules in g.rules.items():
+    for n, rules in g.rules():
         if n in p: continue
         if any(productive_rule(rule, p) for rule in rules):
             p.add(n)
@@ -174,7 +188,7 @@ def productive(g: Grammar) -> set[NonTerm]:
     return productive_0(set(), g)
 
 def reachable_1(r: set[NonTerm], g: Grammar) -> set[NonTerm]:
-    for n, rules in g.rules.items():
+    for n, rules in g.rules():
         if n not in r: continue
         for rule in rules:
             r.update({ s for s in rule if isNonTerm(s) })
@@ -196,7 +210,7 @@ def preprocess(g: Grammar) -> Grammar:
 # ##################
 
 def nullable_1(null: set[NonTerm], g: Grammar) -> set[NonTerm]:
-    for n, rules in g.rules.items():
+    for n, rules in g.rules():
         if n in null: continue
         for rule in rules:
             if all(isNonTerm(s) and s in null for s in rule):
@@ -210,7 +224,7 @@ def nullable(g: Grammar) -> set[NonTerm]:
     return nullable_0(set(), g)
 
 def first_1(first: defaultdict[NonTerm, set[PseudoTerm]], g: Grammar):
-    for n, rules in g.rules.items():
+    for n, rules in g.rules():
         for rule in rules:
             if len(rule) == 0:
                 first[n].add(Epsilon())
@@ -235,7 +249,7 @@ def first(g: Grammar) -> dict[NonTerm, set[PseudoTerm]]:
 
 def follow_1(follow: defaultdict[NonTerm, set[PseudoTerm]], gfp):
     g, first = gfp
-    for n, rules in g.rules.items():
+    for n, rules in g.rules():
         for rule in rules:
             if len(rule) == 0: continue
             for i in range(len(rule)-1):
