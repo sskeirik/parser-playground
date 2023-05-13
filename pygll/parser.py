@@ -118,7 +118,7 @@ class CallReturn:
     returnIndex: int
 
     def __post_init__(self):
-        if self.index < 0:
+        if self.returnIndex < 0:
             raise ValueError("CallReturn index must be non-negative")
 
 @dataclass(frozen=True)
