@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import TypeVar, Callable, Any
 from copy import deepcopy
@@ -159,32 +160,34 @@ _nullable_0 = closure(_nullable_1, True)
 def nullable(g: Grammar) -> set[NonTerm]:
     return _nullable_0(set(), g)
 
-def _first_1(first: defaultdict[NonTerm, set[PseudoTerm]], g: Grammar):
+def first(firstMap: dict[NonTerm, set[PseudoTerm]], word: Iterable[Symbol]) -> set[PseudoTerm]:
+    firstWord = set()
+    for sym in word:
+        if isTerm(sym):
+            firstWord.add(sym)
+            break
+        firstSym = firstMap[sym]
+        hasEpsilon = Epsilon() in firstSym
+        firstWord.update(firstMap[sym] - { Epsilon() })
+        if not hasEpsilon:
+            break
+    else:
+        firstWord.add(Epsilon())
+    return firstWord
+
+def _buildFirst1(firstMap: defaultdict[NonTerm, set[PseudoTerm]], g: Grammar):
     for n, rules in g.rules():
         for rule in rules:
-            if len(rule) == 0:
-                first[n].add(Epsilon())
-            else:
-                for sym in rule:
-                    if isTerm(sym):
-                        first[n].add(sym)
-                        break
-                    elif Epsilon() in first[sym]:
-                        first[n].update(first[sym] - { Epsilon() })
-                    else:
-                        first[n].update(first[sym])
-                        break
-                else:
-                    first[n].add(Epsilon())
-    return first
+            firstMap[n] = first(firstMap, rule)
+    return firstMap
 
-_first_0 = closure(_first_1, True)
+_buildFirst0 = closure(_buildFirst1, True)
 
-def first(g: Grammar) -> dict[NonTerm, set[PseudoTerm]]:
-    return _first_0(defaultdict(set), g)
+def buildFirst(g: Grammar) -> dict[NonTerm, set[PseudoTerm]]:
+    return _buildFirst0(defaultdict(set), g)
 
-def _follow_1(follow: defaultdict[NonTerm, set[PseudoTerm]], gfp: tuple[Grammar, set[PseudoTerm]]):
-    g, first = gfp
+def _buildFollow1(follow: defaultdict[NonTerm, set[PseudoTerm]], gfp: tuple[Grammar, set[PseudoTerm]]):
+    g, firstMap = gfp
     for n, rules in g.rules():
         for rule in rules:
             if len(rule) == 0: continue
@@ -192,17 +195,17 @@ def _follow_1(follow: defaultdict[NonTerm, set[PseudoTerm]], gfp: tuple[Grammar,
                 curr, nxt = rule[i], rule[i+1]
                 if isTerm(curr): continue
                 if isTerm(nxt): follow[curr].add(nxt)
-                else:           follow[curr].update(first[nxt] - { Epsilon() })
+                else:           follow[curr].update(firstMap[nxt] - { Epsilon() })
             last = rule[-1]
             if isNonTerm(last): follow[last].update(follow[n])
     return follow
 
-_follow_0 = closure(_follow_1, True)
+_buildFollow0 = closure(_buildFollow1, True)
 
-def follow(g: Grammar, first: set[PseudoTerm]):
+def buildFollow(g: Grammar, first: set[PseudoTerm]):
     d = defaultdict(set)
     d[g.start].add(Term("$"))
-    return _follow_0(d, (g, first))
+    return _buildFollow0(d, (g, first))
 
 # grammar initialization routines
 # ###############################
@@ -217,10 +220,10 @@ def preprocess(g: Grammar) -> Grammar:
 @dataclass(frozen=True)
 class GrammarPredictor:
     grammar: Grammar
-    first: set[PseudoTerm]
-    follow: set[PseudoTerm]
+    firstMap: dict[NonTerm, set[PseudoTerm]]
+    followMap: dict[NonTerm, set[PseudoTerm]]
 
     def __init__(self, grammar: Grammar, first: set[PseudoTerm], follow: set[PseudoTerm]):
-        self.grammar = preprocess(grammar)
-        self.first   = first(g)
-        self.follow  = follow(g, first)
+        self.grammar   = preprocess(grammar)
+        self.firstMap  = buildFirst(g)
+        self.followMap = buildFollow(g, self.firstMap)

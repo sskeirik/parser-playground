@@ -42,10 +42,10 @@ def test_parser():
     g_2 = shrink(g_1, r)
     print(g_2)
 
-    f_1 = first(g_2)
+    f_1 = buildFirst(g_2)
     print(f_1)
 
-    flw_1 = follow(g_2, f_1)
+    flw_1 = buildFollow(g_2, f_1)
     print(flw_1)
 
     g_s = Grammar(NonTerm("S"),
@@ -70,8 +70,8 @@ def test_parser():
 
     print(nullable(g_s))
 
-    f_2 = first(g_s)
+    f_2 = buildFirst(g_s)
     print(f_2)
 
-    flw_2 = follow(g_s, f_2)
+    flw_2 = buildFollow(g_s, f_2)
     print(flw_2)
