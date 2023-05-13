@@ -66,7 +66,8 @@ class GrammarSlot:
     rule: Rule
     ruleIndex: int
     def __post_init__(self):
-        if self.ruleIndex > len(self.rule.rhs): raise ValueError("Grammar slot ruleIndex must be less than or equal to the rule RHS symbols")
+        if self.ruleIndex < 0:                  raise ValueError("GrammarSlot ruleIndex must be non-negative")
+        if self.ruleIndex > len(self.rule.rhs): raise ValueError("GrammarSlot ruleIndex must be less than or equal to the rule RHS symbols")
     def __repr__(self):
         res = self.rule.lhs.name + " :="
         for i,s in enumerate(self.rule.rhs):
@@ -84,21 +85,33 @@ class Descriptor:
     index: int
     returnIndex: int
 
+    def __post_init__(self):
+        if self.index < 0 or self.returnIndex < 0:
+            raise ValueError("Descriptor indices must be non-negative")
+
 @dataclass(frozen=True)
-class NonTermLoc:
+class CallLocation:
     symbol: NonTerm
     index: int
 
+    def __post_init__(self):
+        if self.index < 0:
+            raise ValueError("CallLocation index must be non-negative")
+
 @dataclass(frozen=True)
-class NonTermReturn:
+class CallReturn:
     slot: GrammarSlot
     returnIndex: int
+
+    def __post_init__(self):
+        if self.index < 0:
+            raise ValueError("CallReturn index must be non-negative")
 
 @dataclass
 class GLLParseState:
     parseInput: str
     descriptors: set[Descriptor]
-    callReturnForest: dict[NonTermLoc, NonTermReturn]
+    callReturnForest: dict[CallLocation, CallReturn]
 
 # utility functions
 # #################
