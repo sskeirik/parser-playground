@@ -122,10 +122,26 @@ class CallReturn:
             raise ValueError("CallReturn index must be non-negative")
 
 @dataclass
-class GLLParseState:
+class GLLParser:
+    grammar: Grammar
     parseInput: str
-    descriptors: set[Descriptor]
+    workingSet: set[Descriptor]
+    totalSet: set[Descriptor]
     callReturnForest: dict[CallLocation, CallReturn]
+
+    def __init__(self, grammar, parseInput):
+        self.grammar    = grammar
+        self.parseInput = parseInput
+        self.workingSet = {}
+        self.totalSet   = {}
+        self.callReturnForest = dict()
+        for rule in grammar[grammar.start]:
+          addDesc(Descriptor(GrammarSlot(rule, 0), 0, 0))
+
+    def addDesc(desc):
+        if desc not in self.totalSet:
+            self.workingSet.add(desc)
+            self.totalSet.add(desc)
 
 # utility functions
 # #################
