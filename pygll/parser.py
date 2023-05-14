@@ -177,7 +177,7 @@ class GLLParser:
                 # prune invalid descriptors
                 needSelect = slot.index != 0
                 if needSelect and not self.grammar.testSelect(focus, slot.rule.lhs, suffix[offset:]):
-                    continue
+                    break
 
                 # if subject is nonterm, call it and finish processing descriptor
                 if isNonTerm(subject):
@@ -191,7 +191,7 @@ class GLLParser:
                 # update offset
                 offset += 1
 
-            # if we didn't exit due to call
+            # if we didn't exit due to prune/call
             else:
                 # if slot is final and focus is in follow map
                 if len(suffix[offset:]) == 0:
