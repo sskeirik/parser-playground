@@ -1,6 +1,23 @@
+from copy import deepcopy
 import sys
 from ..grammar import *
 from ..parser import *
+
+G1 = Grammar(NonTerm("A"),
+            { NonTerm("A") : { (Term("P")   ,) },
+              NonTerm("B") : { (NonTerm("Q"),) },
+              NonTerm("C") : { (Term("R"),),
+                               (NonTerm("B"),) }
+            })
+
+G2 = Grammar(NonTerm("S"),
+            { NonTerm("S") : { (NonTerm("S"), NonTerm("S")),
+                               (),
+                               (NonTerm("A"), NonTerm("B")),
+                               (Term("a"),) },
+              NonTerm("A") : { (Term("a"), NonTerm("A")) },
+              NonTerm("B") : { (Term("b"),) }
+            })
 
 def test_grammar_format():
     r1 = Rule(NonTerm("A"), (Term("P"), NonTerm("R"), Term("Q")))
@@ -8,23 +25,8 @@ def test_grammar_format():
     print(r1)
     print(r2)
 
-    g = Grammar(NonTerm("A"),
-               { NonTerm("A") : { (Term("P")   ,) },
-                 NonTerm("B") : { (NonTerm("Q"),) },
-                 NonTerm("C") : { (Term("R"),),
-                                  (NonTerm("B"),) }
-               })
-    print(g)
-
-    g_s = Grammar(NonTerm("S"),
-                  { NonTerm("S") : { (NonTerm("S"), NonTerm("S")),
-                                     (),
-                                     (NonTerm("A"), NonTerm("B")),
-                                     (Term("a"),) },
-                    NonTerm("A") : { (Term("a"), NonTerm("A")) },
-                    NonTerm("B") : { (Term("b"),) }
-                  })
-    print(g_s)
+    print(G1)
+    print(G2)
 
     print(GrammarSlot(r1,0))
     print(GrammarSlot(r1,1))
@@ -41,13 +43,7 @@ def test_grammar_format():
         pass
 
 def test_grammar_build():
-    g = Grammar(NonTerm("A"),
-               { NonTerm("A") : { (Term("P")   ,) },
-                 NonTerm("B") : { (NonTerm("Q"),) },
-                 NonTerm("C") : { (Term("R"),),
-                                  (NonTerm("B"),) }
-               })
-
+    g     = deepcopy(G1)
     p     = productive(g)
     g_1   = shrink(g, p)
     r     = reachable(g_1)
@@ -62,15 +58,7 @@ def test_grammar_build():
     print(f_1)
     print(flw_1)
 
-    g = Grammar(NonTerm("S"),
-               { NonTerm("S") : { (NonTerm("S"), NonTerm("S")),
-                                  (),
-                                  (NonTerm("A"), NonTerm("B")),
-                                  (Term("a"),) },
-                 NonTerm("A") : { (Term("a"), NonTerm("A")) },
-                 NonTerm("B") : { (Term("b"),) }
-               })
-
+    g     = deepcopy(G2)
     p     = productive(g)
     g_1   = shrink(g, p)
     r     = reachable(g_1)
