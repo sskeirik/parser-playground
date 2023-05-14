@@ -77,12 +77,6 @@ class CallReturn:
         if self.returnIndex < 0:
             raise ValueError("CallReturn index must be non-negative")
 
-# GLL Data Structure Utility Functions
-# ####################################
-
-def slots(rule: Rule):
-    return [GrammarSlot(rule, i) for i in range(1, len(rule.rhs))]
-
 # GLL Parser
 # ##########
 
