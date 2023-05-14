@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, astuple
 from .grammar import Term, NonTerm, isTerm, isNonTerm, Rule, GrammarPredictor
 
 MDOT = " · "
@@ -20,29 +20,31 @@ def setAdd(st, elem):
 @dataclass(frozen=True)
 class GrammarSlot:
     rule: Rule
-    ruleIndex: int
+    index: int
     def __post_init__(self):
-        if self.ruleIndex < 0:                  raise ValueError("GrammarSlot ruleIndex must be non-negative")
-        if self.ruleIndex > len(self.rule.rhs): raise ValueError("GrammarSlot ruleIndex must be less than or equal to the rule RHS symbols")
+        if self.index < 0:         raise ValueError("GrammarSlot index must be non-negative")
+        if self.index > len(self): raise ValueError("GrammarSlot index must be less than or equal to the rule RHS symbols")
     def __repr__(self):
         res = self.rule.lhs.name + " :="
         for i,s in enumerate(self.rule.rhs):
             term = isTerm(s)
             sep = ' '
-            if i == self.ruleIndex: sep = MDOT
+            if i == self.index: sep = MDOT
             if term: res += f'{sep}"{s.name}"'
             else:    res += f'{sep}{s.name}'
-        if self.ruleIndex == len(self.rule.rhs): res += MDOT
+        if self.index == len(self.rule.rhs): res += MDOT
         return res.strip()
     def __len__(self):
         return len(self.rule)
-    def subject(self):
-        return self.rule.rhs[self.ruleIndex - 1] if self.ruleIndex else None
-    def prevNonTerm(self):
-        sym = self.subject()
-        if sym == None:        raise ValueError("GrammarSlot prevNonTerm() cannot be called when index is 0")
-        if not isNonTerm(sym): raise ValueError("GrammarSlot prevNonTerm() cannot be called when previous symbol is not a non-terminal")
+    def callee(self):
+        sym = self.rule.rhs[self.index - 1] if self.index else None
+        if sym == None:        raise ValueError("GrammarSlot.callee() requires index > 0")
+        if not isNonTerm(sym): raise ValueError("GrammarSlot.callee() requires symbol at index-1 is NonTerm")
         return sym
+    def subject(self):
+        return self.rule.rhs[self.index + 1] if self.index < len(self) else None
+    def advance(self):
+        return GrammarSlot(self.rule, self.index + 1) if self.index < len(self) else None
 
 @dataclass(frozen=True)
 class Descriptor:
@@ -76,7 +78,7 @@ class CallReturn:
 # ####################################
 
 def slots(rule: Rule):
-    return [GrammarSlot(rule, i) for i in range(len(rule.rhs))]
+    return [GrammarSlot(rule, i) for i in range(1, len(rule.rhs))]
 
 # GLL Parser
 # ##########
@@ -103,7 +105,7 @@ class GLLParser:
             self.totalSet.add(desc)
 
     def call(self, slot, returnIndex, index):
-        sym  = slot.prevNonTerm()
+        sym  = slot.callee()
         loc  = CallLocation(sym, index)
         ret  = CallReturn(slot, returnIndex)
         rets = self.callReturnForest[loc]
@@ -140,7 +142,20 @@ class GLLParser:
     def continueParse(self, steps):
         while steps > 0 and len(self.workingSet) > 0:
             steps -= 1
-            desc = self.workingSet.pop()
+
+            slot, returnIndex, index = astuple(self.workingSet.pop())
+            foucs = self.parseInput[index]
+
+            if len(slot) == 0:
+                continue
+
+            subject = slot.subject()
+            if subject == None: return
+
+            while isTerm(subject):
+                term = subject.name
+                index += 1
+
             raise RuntimeError("Unimplemented")
 
     def workRemaining(self):
