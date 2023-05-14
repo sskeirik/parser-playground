@@ -19,6 +19,22 @@ G2 = Grammar(NonTerm("S"),
               NonTerm("B") : { (Term("b"),) }
             })
 
+G3 = Grammar(NonTerm("S"),
+            { NonTerm("S") : { (NonTerm("A"), NonTerm("C"), Term("a"), NonTerm("B")),
+                               (NonTerm("A"), NonTerm("B"), Term("a"), Term("a")),
+                             },
+              NonTerm("A") : { (Term("a"), NonTerm("A")),
+                               (Term("a"),),
+                             },
+              NonTerm("B") : { (Term("b"), NonTerm("B")),
+                               (Term("b"),),
+                             },
+              NonTerm("C") : { (Term("b"), NonTerm("C")),
+                               (Term("b"),),
+                             },
+            })
+
+
 def test_grammar_format():
     r1 = Rule(NonTerm("A"), (Term("P"), NonTerm("R"), Term("Q")))
     r2 = Rule(NonTerm("A"), (NonTerm("P"), NonTerm("Q")))
