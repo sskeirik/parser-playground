@@ -42,9 +42,12 @@ class GrammarSlot:
         if not isNonTerm(sym): raise ValueError("GrammarSlot.callee() requires symbol at index-1 is NonTerm")
         return sym
     def subject(self):
-        return self.rule.rhs[self.index + 1] if self.index < len(self) else None
-    def advance(self):
-        return GrammarSlot(self.rule, self.index + 1) if self.index < len(self) else None
+        return self.rule.rhs[self.index] if self.index < len(self) - 1 else None
+    def suffix(self):
+        return self.rule.rhs[self.index:]
+    def update(self, offset=0):
+        if offset == 0: return self
+        return GrammarSlot(self.rule, self.index + offset) if self.index + offset <= len(self) else None
 
 @dataclass(frozen=True)
 class Descriptor:
@@ -140,23 +143,55 @@ class GLLParser:
         self.ntAdd(grammar.start)
 
     def continueParse(self, steps):
-        while steps > 0 and len(self.workingSet) > 0:
+        # while more work to do and steps remaining
+        while len(self.workingSet) > 0 and steps > 0:
             steps -= 1
 
+            # grab descriptor
             slot, returnIndex, index = astuple(self.workingSet.pop())
-            foucs = self.parseInput[index]
 
-            if len(slot) == 0:
-                continue
+            # skip epsilon slots (for now)
+            if len(slot) == 0: continue
 
-            subject = slot.subject()
-            if subject == None: return
+            # grab sym, suffix
+            sym = slot.rule.lhs
+            suffix = slot.suffix()
 
-            while isTerm(subject):
-                term = subject.name
-                index += 1
+            # if slot is nonfinal
+            offset = 0
+            while len(suffix[offset:]) > 0:
 
-            raise RuntimeError("Unimplemented")
+                # grab slot subject and parse focus
+                subject = suffix[offset]
+                focus = self.parseInput[index + offset]
+
+                # prune invalid descriptors
+                needSelect = slot.index != 0
+                if needSelect and not self.grammar.testSelect(focus, slot.rule.lhs, suffix[offset:]):
+                    continue
+
+                # if subject is nonterm, call it and finish processing descriptor
+                if isNonTerm(subject):
+                    call(slot.update(offset+1), returnIndex, index + offset)
+                    break
+
+                # if subject is a term, add bsr element
+                if isTerm(subject):
+                    self.bsrAdd(slot.update(offset+1), returnIndex, index + offset, index + offset + 1)
+
+                # update offset
+                offset += 1
+
+            # if we didn't exit due to call
+            else:
+                # if slot is final and focus is in follow map
+                if len(suffix[offset:]) == 0:
+                    if self.parseInput[index + offset] in self.grammar.followMap[sym]:
+                        self.rtn(sym, returnIndex, index)
+                        continue
+
+        # return new working set size
+        return len(self.workingSet)
 
     def workRemaining(self):
         return len(self.workingSet)
