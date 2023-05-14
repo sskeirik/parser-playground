@@ -88,3 +88,11 @@ def test_grammar_build():
     print(g_2)
     print(f_1)
     print(flw_1)
+
+def init_parser_basic():
+    rawInput = "abaa"
+    parseInput = [Term(c) for c in rawInput]
+    grammarPredictor = GrammarPredictor(deepcopy(G3))
+    gllParser = GLLParser(grammarPredictor)
+    gllParser.parse(parseInput, 0)
+    return gllParser
