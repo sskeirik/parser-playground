@@ -34,10 +34,12 @@ class GrammarSlot:
             else:    res += f'{sep}{s.name}'
         if self.ruleIndex == len(self.rule.rhs): res += MDOT
         return res.strip()
+    def subject(self):
+        return self.rule.rhs[self.ruleIndex - 1] if self.ruleIndex else None
     def prevNonTerm(self):
-        if self.ruleIndex == 0: raise ValueError("GrammarSlot prevNonTerm() cannot be called when index is 0")
-        sym = self.rule.rhs[self.ruleIndex - 1]
-        if not isNonTerm(sym ): raise ValueError("GrammarSlot prevNonTerm() cannot be called when previous symbol is not a non-terminal")
+        sym = self.subject()
+        if sym == None:        raise ValueError("GrammarSlot prevNonTerm() cannot be called when index is 0")
+        if not isNonTerm(sym): raise ValueError("GrammarSlot prevNonTerm() cannot be called when previous symbol is not a non-terminal")
         return sym
 
 @dataclass(frozen=True)
@@ -67,6 +69,15 @@ class CallReturn:
     def __post_init__(self):
         if self.returnIndex < 0:
             raise ValueError("CallReturn index must be non-negative")
+
+# GLL Data Structure Utility Functions
+# ####################################
+
+def slots(rule: Rule):
+    return [GrammarSlot(rule, i) for i in range(len(rule.rhs))]
+
+# GLL Parser
+# ##########
 
 class GLLParser:
     grammar: GrammarPredictor
