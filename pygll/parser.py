@@ -77,6 +77,17 @@ class CallReturn:
         if self.returnIndex < 0:
             raise ValueError("CallReturn index must be non-negative")
 
+@dataclass(frozen=True)
+class BSR:
+    slot: GrammarSlot
+    start: int
+    pivot: int
+    end: int
+
+    def __post_init__(self):
+        if not (start <= pivot and pivot <= end):
+            raise ValueError("BSREndNode indices invalid")
+
 # GLL Parser
 # ##########
 
@@ -87,6 +98,7 @@ class GLLParser:
     totalSet: set[Descriptor]
     callReturnForest: dict[CallLocation, set[CallReturn]]
     contingentReturnSet: dict[CallLocation, set[int]]
+    bsrSet: set[BSR]
 
     def __init__(self, grammar):
         self.grammar = grammar
@@ -125,8 +137,8 @@ class GLLParser:
                 self.addDesc(Descriptor(callRet.slot, callRet.returnIndex, index))
                 self.bsrAdd(callRet.slot, callRet.returnIndex, returnIndex, index)
 
-    def bsrAdd(self, slot, startIndex, index, endIndex):
-        pass
+    def bsrAdd(self, slot, startIndex, middleIndex, endIndex):
+        self.bsrSet.add(BSR(slot, startIndex, middleIndex, endIndex))
 
     def initParse(self, parseInput):
         self.parseInput = parseInput
