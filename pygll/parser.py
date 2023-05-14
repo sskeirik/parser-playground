@@ -85,7 +85,7 @@ class BSR:
     end: int
 
     def __post_init__(self):
-        if not (start <= pivot and pivot <= end):
+        if not (self.start <= self.pivot and self.pivot <= self.end):
             raise ValueError("BSREndNode indices invalid")
 
 # GLL Parser
@@ -104,9 +104,9 @@ class GLLParser:
         self.grammar = grammar
 
     def ntAdd(self, nonterm, index):
-        for rule in grammar[nonterm]:
-            if self.grammar.testSelect(self.parseInput[index], nonterm, rule.rhs):
-                self.addDesc(Descriptor(GrammarSlot(rule, 0), index, index))
+        for ruleRhs in self.grammar.grammar[nonterm]:
+            if self.grammar.testSelect(self.parseInput[index], nonterm, ruleRhs):
+                self.addDesc(Descriptor(GrammarSlot(Rule(nonterm, ruleRhs), 0), index, index))
 
     def addDesc(self, desc):
         if desc not in self.totalSet:
@@ -140,21 +140,24 @@ class GLLParser:
     def bsrAdd(self, slot, startIndex, middleIndex, endIndex):
         self.bsrSet.add(BSR(slot, startIndex, middleIndex, endIndex))
 
-    def initParse(self, parseInput):
+    def parse(self, parseInput, steps=-1):
         self.parseInput = parseInput
-        self.workingSet = {}
-        self.totalSet   = {}
-        self.callReturnForest = defaultdict(set())
-        self.contingentReturnSet = defaultdict(set())
-        self.ntAdd(grammar.start)
+        self.workingSet = set()
+        self.totalSet   = set()
+        self.bsrSet     = set()
+        self.callReturnForest = defaultdict(set)
+        self.contingentReturnSet = defaultdict(set)
+        self.ntAdd(self.grammar.grammar.start, 0)
+        self.continueParse(steps)
 
-    def continueParse(self, steps):
+    def continueParse(self, steps=-1):
         # while more work to do and steps remaining
-        while len(self.workingSet) > 0 and steps > 0:
-            steps -= 1
+        while len(self.workingSet) > 0 and steps != 0:
+            if steps > 0: steps -= 1
 
             # grab descriptor
-            slot, returnIndex, index = astuple(self.workingSet.pop())
+            desc = self.workingSet.pop()
+            slot, returnIndex, index = desc.slot, desc.returnIndex, desc.index
 
             # skip epsilon slots (for now)
             if len(slot) == 0: continue
@@ -178,7 +181,7 @@ class GLLParser:
 
                 # if subject is nonterm, call it and finish processing descriptor
                 if isNonTerm(subject):
-                    call(slot.update(offset+1), returnIndex, index + offset)
+                    self.call(slot.update(offset+1), returnIndex, index + offset)
                     break
 
                 # if subject is a term, add bsr element

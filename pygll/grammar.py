@@ -220,16 +220,15 @@ def preprocess(g: Grammar) -> Grammar:
     g2 = shrink(g1, r)
     return g
 
-@dataclass(frozen=True)
 class GrammarPredictor:
     grammar: Grammar
     firstMap: dict[NonTerm, set[PseudoTerm]]
     followMap: dict[NonTerm, set[PseudoTerm]]
 
-    def __init__(self, grammar: Grammar, first: set[PseudoTerm], follow: set[PseudoTerm]):
+    def __init__(self, grammar: Grammar):
         self.grammar   = preprocess(grammar)
-        self.firstMap  = buildFirst(g)
-        self.followMap = buildFollow(g, self.firstMap)
+        self.firstMap  = buildFirst(self.grammar)
+        self.followMap = buildFollow(self.grammar, self.firstMap)
 
     def testSelect(self, term: Term, nonterm: NonTerm, word: Iterable[Symbol]):
         wordFirst = first(self.firstMap, word)
