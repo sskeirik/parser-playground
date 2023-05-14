@@ -68,7 +68,6 @@ class CallReturn:
         if self.returnIndex < 0:
             raise ValueError("CallReturn index must be non-negative")
 
-@dataclass
 class GLLParser:
     grammar: GrammarPredictor
     parseInput: list[Term]
@@ -77,14 +76,8 @@ class GLLParser:
     callReturnForest: dict[CallLocation, set[CallReturn]]
     contingentReturnSet: dict[CallLocation, set[int]]
 
-    def __init__(self, grammar, parseInput):
-        self.grammar    = grammar
-        self.parseInput = parseInput
-        self.workingSet = {}
-        self.totalSet   = {}
-        self.callReturnForest = defaultdict(set())
-        self.contingentReturnSet = defaultdict(set())
-        self.ntAdd(grammar.start)
+    def __init__(self, grammar):
+        self.grammar = grammar
 
     def ntAdd(self, nonterm, index):
         for rule in grammar[nonterm]:
@@ -122,3 +115,20 @@ class GLLParser:
 
     def bsrAdd(self, slot, startIndex, index, endIndex):
         pass
+
+    def initParse(self, parseInput):
+        self.parseInput = parseInput
+        self.workingSet = {}
+        self.totalSet   = {}
+        self.callReturnForest = defaultdict(set())
+        self.contingentReturnSet = defaultdict(set())
+        self.ntAdd(grammar.start)
+
+    def continueParse(self, steps):
+        while steps > 0 and len(self.workingSet) > 0:
+            steps -= 1
+            desc = self.workingSet.pop()
+            raise RuntimeError("Unimplemented")
+
+    def workRemaining(self):
+        return len(self.workingSet)
