@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 
+from collections import defaultdict
 from dataclasses import dataclass
 from .grammar import Term, NonTerm, isTerm, isNonTerm, Rule, GrammarPredictor
 
 MDOT = " · "
+
+# Utility Functions
+# #################
+
+def setAdd(st, elem):
+    i = len(st)
+    st.add(elem)
+    return len(st) != i
 
 # GLL Data Structure
 # ##################
@@ -25,12 +34,17 @@ class GrammarSlot:
             else:    res += f'{sep}{s.name}'
         if self.ruleIndex == len(self.rule.rhs): res += MDOT
         return res.strip()
+    def prevNonTerm(self):
+        if self.ruleIndex == 0: raise ValueError("GrammarSlot prevNonTerm() cannot be called when index is 0")
+        sym = self.rule.rhs[self.ruleIndex - 1]
+        if not isNonTerm(sym ): raise ValueError("GrammarSlot prevNonTerm() cannot be called when previous symbol is not a non-terminal")
+        return sym
 
 @dataclass(frozen=True)
 class Descriptor:
     slot: GrammarSlot
-    index: int
     returnIndex: int
+    index: int
 
     def __post_init__(self):
         if self.index < 0 or self.returnIndex < 0:
@@ -54,38 +68,57 @@ class CallReturn:
         if self.returnIndex < 0:
             raise ValueError("CallReturn index must be non-negative")
 
-@dataclass(frozen=True)
-class CallReturnAction:
-    symbol: NonTerm
-    index: int
-    returnIndex: int
-
-    def __post_init__(self):
-        if self.index < 0 or self.returnIndex < 0:
-            raise ValueError("CallReturnAction indices must be non-negative")
-
 @dataclass
 class GLLParser:
     grammar: GrammarPredictor
-    parseInput: str
+    parseInput: list[Term]
     workingSet: set[Descriptor]
     totalSet: set[Descriptor]
     callReturnForest: dict[CallLocation, set[CallReturn]]
-    contingentReturnSet: set[CallReturnAction]
+    contingentReturnSet: dict[CallLocation, set[int]]
 
     def __init__(self, grammar, parseInput):
         self.grammar    = grammar
         self.parseInput = parseInput
         self.workingSet = {}
         self.totalSet   = {}
-        self.callReturnForest = dict()
+        self.callReturnForest = defaultdict(set())
+        self.contingentReturnSet = defaultdict(set())
         self.ntAdd(grammar.start)
 
-    def ntAdd(nonterm):
+    def ntAdd(self, nonterm, index):
         for rule in grammar[nonterm]:
-          addDesc(Descriptor(GrammarSlot(rule, 0), 0, 0))
+            if self.grammar.testSelect(self.parseInput[index], nonterm, rule.rhs):
+                self.addDesc(Descriptor(GrammarSlot(rule, 0), index, index))
 
-    def addDesc(desc):
+    def addDesc(self, desc):
         if desc not in self.totalSet:
             self.workingSet.add(desc)
             self.totalSet.add(desc)
+
+    def call(self, slot, returnIndex, index):
+        sym  = slot.prevNonTerm()
+        loc  = CallLocation(sym, index)
+        ret  = CallReturn(slot, returnIndex)
+        rets = self.callReturnForest[loc]
+        if len(rets) == 0:
+            rets.add(ret)
+            self.ntAdd(sym, index)
+        else:
+            added = setAdd(rets, ret)
+            if added:
+                for contingentRet in self.contingentReturnSet[loc]:
+                    self.addDesc(Descriptor(slot, returnIndex, contingentRet))
+                    self.bsrAdd(slot, returnIndex, index, contingentRet )
+
+    def rtn(self, sym, returnIndex, index):
+        loc = CallLocation(sym, returnIndex)
+        contingentRet = self.contingentReturnSet[loc]
+        added = setAdd(contingentRet, index)
+        if added:
+            for callRet in self.callReturnForest[loc]:
+                self.addDesc(Descriptor(callRet.slot, callRet.returnIndex, index))
+                self.bsrAdd(callRet.slot, callRet.returnIndex, returnIndex, index)
+
+    def bsrAdd(self, slot, startIndex, index, endIndex):
+        pass
