@@ -44,6 +44,9 @@ class Rule:
             else:    res += f' {s.name}'
         return res
 
+    def __len__(self):
+        return len(self.rhs)
+
 @dataclass
 class Grammar:
     start: NonTerm

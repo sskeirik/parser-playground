@@ -34,6 +34,8 @@ class GrammarSlot:
             else:    res += f'{sep}{s.name}'
         if self.ruleIndex == len(self.rule.rhs): res += MDOT
         return res.strip()
+    def __len__(self):
+        return len(self.rule)
     def subject(self):
         return self.rule.rhs[self.ruleIndex - 1] if self.ruleIndex else None
     def prevNonTerm(self):
