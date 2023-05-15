@@ -205,9 +205,9 @@ def _buildFollow1(follow: defaultdict[NonTerm, set[PseudoTerm]], gfp: tuple[Gram
 
 _buildFollow0 = closure(_buildFollow1, True)
 
-def buildFollow(g: Grammar, first: set[PseudoTerm]):
+def buildFollow(g: Grammar, first: set[PseudoTerm], end=Term("$")):
     d = defaultdict(set)
-    d[g.start].add(Term("$"))
+    d[g.start].add(end)
     return _buildFollow0(d, (g, first))
 
 # grammar initialization routines
@@ -224,11 +224,13 @@ class GrammarPredictor:
     grammar: Grammar
     firstMap: dict[NonTerm, set[PseudoTerm]]
     followMap: dict[NonTerm, set[PseudoTerm]]
+    end: Term
 
-    def __init__(self, grammar: Grammar):
+    def __init__(self, grammar: Grammar, end=Term("$")):
         self.grammar   = preprocess(grammar)
         self.firstMap  = buildFirst(self.grammar)
-        self.followMap = buildFollow(self.grammar, self.firstMap)
+        self.followMap = buildFollow(self.grammar, self.firstMap, end)
+        self.end       = end
 
     def testSelect(self, term: Term, nonterm: NonTerm, word: Iterable[Symbol]):
         wordFirst = first(self.firstMap, word)

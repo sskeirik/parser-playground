@@ -156,8 +156,16 @@ class GLLParser:
     def bsrAdd(self, slot, startIndex, middleIndex, endIndex):
         self.bsrSet.add(BSR(slot, startIndex, middleIndex, endIndex))
 
+    def getInput(self, index, allowEnd=True):
+        if allowEnd and index == len(self.parseInput):
+            return self.grammar.end
+        elif index > 0 and index < len(self.parseInput):
+            return self.parseInput[index]
+        else:
+            raise ValueError(f"GLLParser.getInput() index invalid")
+
     def parse(self, parseInput, steps=-1):
-        self.parseInput = parseInput
+        self.parseInput = parseInput + [self.grammar.end]
         self.workingSet = set()
         self.totalSet   = set()
         self.bsrSet     = set()
@@ -188,7 +196,7 @@ class GLLParser:
 
                 # grab slot subject and parse focus
                 subject = suffix[offset]
-                focus = self.parseInput[index + offset]
+                focus = self.getInput(index + offset, allowEnd=False)
 
                 # prune invalid descriptors
                 needSelect = slot.index != 0
@@ -211,8 +219,8 @@ class GLLParser:
             else:
                 # if slot is final and focus is in follow map
                 if len(suffix[offset:]) == 0:
-                    if self.parseInput[index + offset] in self.grammar.followMap[sym]:
-                        self.rtn(sym, returnIndex, index)
+                    if self.getInput(index + offset) in self.grammar.followMap[sym]:
+                        self.rtn(sym, returnIndex, index + offset)
                         continue
 
         # return new working set size
