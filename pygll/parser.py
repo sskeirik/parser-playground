@@ -159,7 +159,7 @@ class GLLParser:
     def getInput(self, index, allowEnd=True):
         if allowEnd and index == len(self.parseInput):
             return self.grammar.end
-        elif index > 0 and index < len(self.parseInput):
+        elif index >= 0 and index < len(self.parseInput):
             return self.parseInput[index]
         else:
             raise ValueError(f"GLLParser.getInput() index invalid")
@@ -196,7 +196,7 @@ class GLLParser:
 
                 # grab slot subject and parse focus
                 subject = suffix[offset]
-                focus = self.getInput(index + offset, allowEnd=False)
+                focus = self.getInput(index + offset)
 
                 # prune invalid descriptors
                 needSelect = slot.index != 0
