@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+import json
 from collections import defaultdict
-from dataclasses import dataclass, astuple
+from dataclasses import dataclass, astuple, asdict
 from .grammar import Term, NonTerm, isTerm, isNonTerm, Rule, GrammarPredictor
 
-MDOT = " · "
+MDOT = " . "
 
 # Utility Functions
 # #################
@@ -30,7 +31,7 @@ class GrammarSlot:
             term = isTerm(s)
             sep = ' '
             if i == self.index: sep = MDOT
-            if term: res += f'{sep}"{s.name}"'
+            if term: res += f"{sep}'{s.name}'"
             else:    res += f'{sep}{s.name}'
         if self.index == len(self.rule.rhs): res += MDOT
         return res.strip()
@@ -88,6 +89,9 @@ class BSR:
         if not (self.start <= self.pivot and self.pivot <= self.end):
             raise ValueError("BSREndNode indices invalid")
 
+    def asdict(self):
+        return {'slot': repr(self.slot), 'start': self.start, 'pivot': self.pivot, 'end': self.end}
+
 # GLL Parser
 # ##########
 
@@ -102,6 +106,18 @@ class GLLParser:
 
     def __init__(self, grammar):
         self.grammar = grammar
+
+    def asdict(self):
+        d = dict()
+        d["workingSet"] = list(repr(desc) for desc in self.workingSet)
+        d["totalSet"]   = list(repr(desc) for desc in self.totalSet)
+        d["crf"]        = list( (repr(k), list(repr(v) for v in vs)) for k,vs in self.callReturnForest.items())
+        d["crs"]        = list( (repr(k), list(vs))                  for k,vs in self.contingentReturnSet.items())
+        d["bsrSet"]     = list( v.asdict() for v in self.bsrSet )
+        return d
+
+    def __repr__(self):
+        return json.dumps(self.asdict(), indent=2)
 
     def ntAdd(self, nonterm, index):
         for ruleRhs in self.grammar.grammar[nonterm]:

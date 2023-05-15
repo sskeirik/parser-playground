@@ -26,7 +26,7 @@ class PseudoTerm(Symbol): pass
 @dataclass(frozen=True)
 class Term(PseudoTerm):
     name: str
-    def __repr__(self): return f'"{self.name}"'
+    def __repr__(self): return f"'{self.name}'"
 
 @dataclass(frozen=True)
 class Epsilon(PseudoTerm): pass
@@ -40,7 +40,7 @@ class Rule:
         res = self.lhs.name + " :="
         for s in self.rhs:
             term = isTerm(s)
-            if term: res += f' "{s.name}"'
+            if term: res += f" '{s.name}'"
             else:    res += f' {s.name}'
         return res
 
