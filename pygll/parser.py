@@ -130,8 +130,8 @@ class GLLParser:
         d = dict()
         d["workingSet"] = list(repr(desc) for desc in self.workingSet)
         d["totalSet"]   = list(repr(desc) for desc in self.totalSet)
-        d["crf"]        = list( (repr(k), list(repr(v) for v in vs)) for k,vs in self.callReturnForest.items())
-        d["crs"]        = list( (repr(k), list(vs))                  for k,vs in self.contingentReturnSet.items())
+        d["crf"]        = list( (repr(k), list(repr(v) for v in vs)) for k,vs in self.callReturnForest.items()    if len(vs))
+        d["crs"]        = list( (repr(k), list(vs))                  for k,vs in self.contingentReturnSet.items() if len(vs))
         d["bsrSet"]     = list( v.asdict() for v in self.bsrSet )
         return d
 
