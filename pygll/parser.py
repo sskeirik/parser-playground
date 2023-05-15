@@ -3,7 +3,7 @@
 import json
 from collections import defaultdict
 from dataclasses import dataclass, astuple, asdict
-from .grammar import Term, NonTerm, isTerm, isNonTerm, Rule, GrammarPredictor
+from .grammar import Symbol, Term, NonTerm, isTerm, isNonTerm, Rule, GrammarPredictor
 
 MDOT = " . "
 
@@ -44,6 +44,8 @@ class GrammarSlot:
         return sym
     def subject(self):
         return self.rule.rhs[self.index] if self.index < len(self) - 1 else None
+    def prefix(self):
+        return self.rule.rhs[:self.index]
     def suffix(self):
         return self.rule.rhs[self.index:]
     def update(self, offset=0):
@@ -79,8 +81,25 @@ class CallReturn:
             raise ValueError("CallReturn index must be non-negative")
 
 @dataclass(frozen=True)
-class BSR:
+class BSR: pass
+
+@dataclass(frozen=True)
+class BSREndNode(BSR):
     slot: GrammarSlot
+    start: int
+    pivot: int
+    end: int
+
+    def __post_init__(self):
+        if not (self.start <= self.pivot and self.pivot <= self.end):
+            raise ValueError("BSREndNode indices invalid")
+
+    def asdict(self):
+        return {'slot': repr(self.slot), 'start': self.start, 'pivot': self.pivot, 'end': self.end}
+
+@dataclass(frozen=True)
+class BSRMidNode(BSR):
+    slot: list[Symbol]
     start: int
     pivot: int
     end: int
@@ -154,7 +173,10 @@ class GLLParser:
                 self.bsrAdd(callRet.slot, callRet.returnIndex, returnIndex, index)
 
     def bsrAdd(self, slot, startIndex, middleIndex, endIndex):
-        self.bsrSet.add(BSR(slot, startIndex, middleIndex, endIndex))
+        if len(slot.suffix()) == 0:
+            self.bsrSet.add(BSREndNode(slot, startIndex, middleIndex, endIndex))
+        elif len(slot.prefix()) > 1:
+            self.bsrSet.add(BSRMidNode(slot.prefix(), startIndex, middleIndex, endIndex))
 
     def getInput(self, index, allowEnd=True):
         if allowEnd and index == len(self.parseInput):
