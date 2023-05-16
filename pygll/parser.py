@@ -95,7 +95,7 @@ class BSREndNode(BSR):
             raise ValueError("BSREndNode indices invalid")
 
     def asdict(self, prettyPrint=False):
-        slot = repr(self.slot) if prettyPrint else asdict(slot)
+        slot = repr(self.slot) if prettyPrint else asdict(self.slot)
         return {'slot': slot, 'start': self.start, 'pivot': self.pivot, 'end': self.end}
 
 @dataclass(frozen=True)
