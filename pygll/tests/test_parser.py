@@ -1,7 +1,7 @@
 from copy import deepcopy
 import sys
-from ..grammar import *
-from ..parser import *
+from pygll.grammar import *
+from pygll.parser import *
 
 try:
     from deepdiff import DeepDiff
@@ -100,9 +100,13 @@ def test_grammar_build():
     print(f_1)
     print(flw_1)
 
+def dump_parser_state(json_state_file, parser):
+    with open(json_state_file, 'w') as f:
+        json.dump(parser.asdict(), f)
+
 def validate_parser_state(json_state_file, parser):
     expected_state = None
-    with open(json_file,'r') as f:
+    with open(json_state_file,'r') as f:
         expected_state = json.load(f)
     actual_state = parser.asdict()
     diff = DeepDiff(expected_state, actual_state)
