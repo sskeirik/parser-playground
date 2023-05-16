@@ -3,6 +3,12 @@ import sys
 from ..grammar import *
 from ..parser import *
 
+try:
+    from deepdiff import DeepDiff
+except:
+    print("Package(s) deepdiff required; try\n$ pip install deepdiff", file=sys.stderr)
+    sys.exit(1)
+
 G1 = Grammar(NonTerm("A"),
             { NonTerm("A") : { (Term("P")   ,) },
               NonTerm("B") : { (NonTerm("Q"),) },
@@ -34,6 +40,11 @@ G3 = Grammar(NonTerm("S"),
                              },
             })
 
+G4 = Grammar(NonTerm("E"),
+            { NonTerm("E") : { (NonTerm("E"), Term("+"), NonTerm("E")),
+                               (Term("1"),),
+                             },
+            })
 
 def test_grammar_format():
     r1 = Rule(NonTerm("A"), (Term("P"), NonTerm("R"), Term("Q")))
@@ -89,10 +100,27 @@ def test_grammar_build():
     print(f_1)
     print(flw_1)
 
+def validate_parser_state(json_state_file, parser):
+    expected_state = None
+    with open(json_file,'r') as f:
+        expected_state = json.load(f)
+    actual_state = parser.asdict()
+    diff = DeepDiff(expected_state, actual_state)
+    if len(diff) != 0:
+        raise ValueError("Parser state does not match expected state:\n" + diff.pretty())
+
 def init_parser_basic():
     rawInput = "abaa"
     parseInput = [Term(c) for c in rawInput]
     grammarPredictor = GrammarPredictor(deepcopy(G3))
+    gllParser = GLLParser(grammarPredictor)
+    gllParser.parse(parseInput, 0)
+    return gllParser
+
+def init_parser_alternative():
+    rawInput = "1+1+1"
+    parseInput = [Term(c) for c in rawInput]
+    grammarPredictor = GrammarPredictor(deepcopy(G4))
     gllParser = GLLParser(grammarPredictor)
     gllParser.parse(parseInput, 0)
     return gllParser
