@@ -94,8 +94,9 @@ class BSREndNode(BSR):
         if not (self.start <= self.pivot and self.pivot <= self.end):
             raise ValueError("BSREndNode indices invalid")
 
-    def asdict(self):
-        return {'slot': repr(self.slot), 'start': self.start, 'pivot': self.pivot, 'end': self.end}
+    def asdict(self, prettyPrint=False):
+        slot = repr(self.slot) if prettyPrint else asdict(slot)
+        return {'slot': slot, 'start': self.start, 'pivot': self.pivot, 'end': self.end}
 
 @dataclass(frozen=True)
 class BSRMidNode(BSR):
@@ -108,8 +109,9 @@ class BSRMidNode(BSR):
         if not (self.start <= self.pivot and self.pivot <= self.end):
             raise ValueError("BSREndNode indices invalid")
 
-    def asdict(self):
-        return {'slot': repr(self.slot), 'start': self.start, 'pivot': self.pivot, 'end': self.end}
+    def asdict(self, prettyPrint=False):
+        slot = repr(self.slot) if prettyPrint else [asdict(s) for s in self.slot]
+        return {'slot': slot, 'start': self.start, 'pivot': self.pivot, 'end': self.end}
 
 # GLL Parser
 # ##########
@@ -126,12 +128,13 @@ class GLLParser:
     def __init__(self, grammar):
         self.grammar = grammar
 
-    def asdict(self):
+    def asdict(self, prettyPrint=False):
+        pp = lambda v: repr(v) if prettyPrint else asdict(v)
         d = dict()
-        d["workingSet"] = list(repr(desc) for desc in self.workingSet)
-        d["totalSet"]   = list(repr(desc) for desc in self.totalSet)
-        d["crf"]        = list( (repr(k), list(repr(v) for v in vs)) for k,vs in self.callReturnForest.items()    if len(vs))
-        d["crs"]        = list( (repr(k), list(vs))                  for k,vs in self.contingentReturnSet.items() if len(vs))
+        d["workingSet"] = list(  pp(desc) for desc in self.workingSet )
+        d["totalSet"]   = list(  pp(desc) for desc in self.totalSet   )
+        d["crf"]        = list( (pp(k), list(pp(v) for v in vs)) for k,vs in self.callReturnForest.items()    if len(vs))
+        d["crs"]        = list( (pp(k), list(vs))                for k,vs in self.contingentReturnSet.items() if len(vs))
         d["bsrSet"]     = list( v.asdict() for v in self.bsrSet )
         return d
 
