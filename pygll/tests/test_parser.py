@@ -4,9 +4,10 @@ from pygll.grammar import *
 from pygll.parser import *
 
 try:
+    import pytest
     from deepdiff import DeepDiff
 except:
-    print("Package(s) deepdiff required; try\n$ pip install deepdiff", file=sys.stderr)
+    print("Package(s) pytest, deepdiff required; try\n$ pip install pytest deepdiff", file=sys.stderr)
     sys.exit(1)
 
 G1 = Grammar(NonTerm("A"),
@@ -113,18 +114,17 @@ def validate_parser_state(json_state_file, parser):
     if len(diff) != 0:
         raise ValueError("Parser state does not match expected state:\n" + diff.pretty())
 
-def init_parser_basic():
-    rawInput = "abaa"
+def init_parser(grammar, rawInput):
     parseInput = [Term(c) for c in rawInput]
-    grammarPredictor = GrammarPredictor(deepcopy(G3))
+    grammarPredictor = GrammarPredictor(deepcopy(grammar))
     gllParser = GLLParser(grammarPredictor)
     gllParser.parse(parseInput, 0)
     return gllParser
 
-def init_parser_alternative():
-    rawInput = "1+1+1"
-    parseInput = [Term(c) for c in rawInput]
-    grammarPredictor = GrammarPredictor(deepcopy(G4))
-    gllParser = GLLParser(grammarPredictor)
-    gllParser.parse(parseInput, 0)
-    return gllParser
+PARSER_TESTS = [(G4, "1+1+1", "./tests/inputs/amb_exp_01.json")]
+
+@pytest.mark.parametrize("grammar,rawInput,state_file", PARSER_TESTS)
+def test_parser(grammar, rawInput, state_file):
+    p = init_parser(grammar, rawInput)
+    p.continueParse()
+    validate_parser_state(state_file, p)
