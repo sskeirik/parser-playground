@@ -55,11 +55,11 @@ class GrammarSlot:
 @dataclass(frozen=True)
 class Descriptor:
     slot: GrammarSlot
-    returnIndex: int
+    callIndex: int
     index: int
 
     def __post_init__(self):
-        if self.index < 0 or self.returnIndex < 0:
+        if self.index < 0 or self.callIndex < 0:
             raise ValueError("Descriptor indices must be non-negative")
 
 @dataclass(frozen=True)
@@ -74,11 +74,11 @@ class CallRecord:
 @dataclass(frozen=True)
 class CallReturn:
     slot: GrammarSlot
-    returnIndex: int
+    callIndex: int
 
     def __post_init__(self):
-        if self.returnIndex < 0:
-            raise ValueError("CallReturn index must be non-negative")
+        if self.callIndex < 0:
+            raise ValueError("CallReturn callIndex must be non-negative")
 
 @dataclass(frozen=True)
 class BSR: pass
@@ -151,10 +151,10 @@ class GLLParser:
             self.workingSet.add(desc)
             self.totalSet.add(desc)
 
-    def call(self, slot, returnIndex, index):
+    def call(self, slot, callIndex, index):
         sym  = slot.callee()
         loc  = CallRecord(sym, index)
-        ret  = CallReturn(slot, returnIndex)
+        ret  = CallReturn(slot, callIndex)
         rets = self.callReturnForest[loc]
         if len(rets) == 0:
             rets.add(ret)
@@ -163,17 +163,17 @@ class GLLParser:
             added = setAdd(rets, ret)
             if added:
                 for contingentRet in self.contingentReturnSet[loc]:
-                    self.addDesc(Descriptor(slot, returnIndex, contingentRet))
-                    self.bsrAdd(slot, returnIndex, index, contingentRet )
+                    self.addDesc(Descriptor(slot, callIndex, contingentRet))
+                    self.bsrAdd(slot, callIndex, index, contingentRet )
 
-    def rtn(self, sym, returnIndex, index):
-        loc = CallRecord(sym, returnIndex)
+    def rtn(self, sym, callIndex, index):
+        loc = CallRecord(sym, callIndex)
         contingentRet = self.contingentReturnSet[loc]
         added = setAdd(contingentRet, index)
         if added:
             for callRet in self.callReturnForest[loc]:
-                self.addDesc(Descriptor(callRet.slot, callRet.returnIndex, index))
-                self.bsrAdd(callRet.slot, callRet.returnIndex, returnIndex, index)
+                self.addDesc(Descriptor(callRet.slot, callRet.callIndex, index))
+                self.bsrAdd(callRet.slot, callRet.callIndex, callIndex, index)
 
     def bsrAdd(self, slot, startIndex, middleIndex, endIndex):
         if len(slot.suffix()) == 0:
@@ -206,7 +206,7 @@ class GLLParser:
 
             # grab descriptor
             desc = self.workingSet.pop()
-            slot, returnIndex, index = desc.slot, desc.returnIndex, desc.index
+            slot, callIndex, index = desc.slot, desc.callIndex, desc.index
 
             # skip epsilon slots (for now)
             if len(slot) == 0: continue
@@ -230,12 +230,12 @@ class GLLParser:
 
                 # if subject is nonterm, call it and finish processing descriptor
                 if isNonTerm(subject):
-                    self.call(slot.update(offset+1), returnIndex, index + offset)
+                    self.call(slot.update(offset+1), callIndex, index + offset)
                     break
 
                 # if subject is a term, add bsr element
                 if isTerm(subject):
-                    self.bsrAdd(slot.update(offset+1), returnIndex, index + offset, index + offset + 1)
+                    self.bsrAdd(slot.update(offset+1), callIndex, index + offset, index + offset + 1)
 
                 # update offset
                 offset += 1
@@ -245,7 +245,7 @@ class GLLParser:
                 # if slot is final and focus is in follow map
                 if len(suffix[offset:]) == 0:
                     if self.getInput(index + offset) in self.grammar.followMap[sym]:
-                        self.rtn(sym, returnIndex, index + offset)
+                        self.rtn(sym, callIndex, index + offset)
                         continue
 
         # return new working set size
