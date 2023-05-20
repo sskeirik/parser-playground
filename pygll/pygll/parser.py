@@ -63,13 +63,13 @@ class Descriptor:
             raise ValueError("Descriptor indices must be non-negative")
 
 @dataclass(frozen=True)
-class CallLocation:
+class CallRecord:
     symbol: NonTerm
     index: int
 
     def __post_init__(self):
         if self.index < 0:
-            raise ValueError("CallLocation index must be non-negative")
+            raise ValueError("CallRecord index must be non-negative")
 
 @dataclass(frozen=True)
 class CallReturn:
@@ -121,8 +121,8 @@ class GLLParser:
     parseInput: list[Term]
     workingSet: set[Descriptor]
     totalSet: set[Descriptor]
-    callReturnForest: dict[CallLocation, set[CallReturn]]
-    contingentReturnSet: dict[CallLocation, set[int]]
+    callReturnForest: dict[CallRecord, set[CallReturn]]
+    contingentReturnSet: dict[CallRecord, set[int]]
     bsrSet: set[BSR]
 
     def __init__(self, grammar):
@@ -153,7 +153,7 @@ class GLLParser:
 
     def call(self, slot, returnIndex, index):
         sym  = slot.callee()
-        loc  = CallLocation(sym, index)
+        loc  = CallRecord(sym, index)
         ret  = CallReturn(slot, returnIndex)
         rets = self.callReturnForest[loc]
         if len(rets) == 0:
@@ -167,7 +167,7 @@ class GLLParser:
                     self.bsrAdd(slot, returnIndex, index, contingentRet )
 
     def rtn(self, sym, returnIndex, index):
-        loc = CallLocation(sym, returnIndex)
+        loc = CallRecord(sym, returnIndex)
         contingentRet = self.contingentReturnSet[loc]
         added = setAdd(contingentRet, index)
         if added:
