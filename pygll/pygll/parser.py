@@ -86,32 +86,32 @@ class BSR: pass
 @dataclass(frozen=True)
 class BSREndNode(BSR):
     slot: GrammarSlot
-    start: int
+    lext: int
     pivot: int
-    end: int
+    rext: int
 
     def __post_init__(self):
-        if not (self.start <= self.pivot and self.pivot <= self.end):
+        if not (self.lext <= self.pivot and self.pivot <= self.rext):
             raise ValueError("BSREndNode indices invalid")
 
     def asdict(self, prettyPrint=False):
         slot = repr(self.slot) if prettyPrint else asdict(self.slot)
-        return {'slot': slot, 'start': self.start, 'pivot': self.pivot, 'end': self.end}
+        return {'slot': slot, 'lext': self.lext, 'pivot': self.pivot, 'rext': self.rext}
 
 @dataclass(frozen=True)
 class BSRMidNode(BSR):
     slot: list[Symbol]
-    start: int
+    lext: int
     pivot: int
-    end: int
+    rext: int
 
     def __post_init__(self):
-        if not (self.start <= self.pivot and self.pivot <= self.end):
+        if not (self.lext <= self.pivot and self.pivot <= self.rext):
             raise ValueError("BSREndNode indices invalid")
 
     def asdict(self, prettyPrint=False):
         slot = repr(self.slot) if prettyPrint else [asdict(s) for s in self.slot]
-        return {'slot': slot, 'start': self.start, 'pivot': self.pivot, 'end': self.end}
+        return {'slot': slot, 'lext': self.lext, 'pivot': self.pivot, 'rext': self.rext}
 
 # GLL Parser
 # ##########
@@ -175,11 +175,11 @@ class GLLParser:
                 self.addDesc(Descriptor(callRet.slot, callRet.callIndex, index))
                 self.bsrAdd(callRet.slot, callRet.callIndex, callIndex, index)
 
-    def bsrAdd(self, slot, startIndex, middleIndex, endIndex):
+    def bsrAdd(self, slot, lext, pivot, rext):
         if len(slot.suffix()) == 0:
-            self.bsrSet.add(BSREndNode(slot, startIndex, middleIndex, endIndex))
+            self.bsrSet.add(BSREndNode(slot, lext, pivot, rext))
         elif len(slot.prefix()) > 1:
-            self.bsrSet.add(BSRMidNode(slot.prefix(), startIndex, middleIndex, endIndex))
+            self.bsrSet.add(BSRMidNode(slot.prefix(), lext, pivot, rext))
 
     def getInput(self, index, allowEnd=True):
         if allowEnd and index == len(self.parseInput):
