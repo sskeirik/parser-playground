@@ -224,7 +224,7 @@ class GLLParser:
                 focus = self.getInput(index + offset)
 
                 # prune invalid descriptors
-                needSelect = slot.index != 0
+                needSelect = slot.index + offset != 0
                 if needSelect and not self.grammar.testSelect(focus, slot.rule.lhs, suffix[offset:]):
                     break
 
