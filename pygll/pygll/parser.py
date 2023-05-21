@@ -72,13 +72,13 @@ class CallRecord:
             raise ValueError("CallRecord index must be non-negative")
 
 @dataclass(frozen=True)
-class CallReturn:
+class CallReturnAddress:
     slot: GrammarSlot
     callIndex: int
 
     def __post_init__(self):
         if self.callIndex < 0:
-            raise ValueError("CallReturn callIndex must be non-negative")
+            raise ValueError("CallReturnAddress callIndex must be non-negative")
 
 @dataclass(frozen=True)
 class BSR: pass
@@ -121,7 +121,7 @@ class GLLParser:
     parseInput: list[Term]
     workingSet: set[Descriptor]
     totalSet: set[Descriptor]
-    callReturnForest: dict[CallRecord, set[CallReturn]]
+    callReturnForest: dict[CallRecord, set[CallReturnAddress]]
     contingentReturnSet: dict[CallRecord, set[int]]
     bsrSet: set[BSR]
 
@@ -152,28 +152,28 @@ class GLLParser:
             self.totalSet.add(desc)
 
     def call(self, slot, callIndex, index):
-        sym  = slot.pred()
-        loc  = CallRecord(sym, index)
-        ret  = CallReturn(slot, callIndex)
-        rets = self.callReturnForest[loc]
-        if len(rets) == 0:
-            rets.add(ret)
+        sym = slot.pred()
+        record = CallRecord(sym, index)
+        retAddr  = CallReturnAddress(slot, callIndex)
+        retAddrSet = self.callReturnForest[record]
+        if len(retAddrSet) == 0:
+            retAddrSet.add(retAddr)
             self.ntAdd(sym, index)
         else:
-            added = setAdd(rets, ret)
+            added = setAdd(retAddrSet, retAddr)
             if added:
-                for contingentRet in self.contingentReturnSet[loc]:
-                    self.addDesc(Descriptor(slot, callIndex, contingentRet))
-                    self.bsrAdd(slot, callIndex, index, contingentRet )
+                for retIndex in self.contingentReturnSet[record]:
+                    self.addDesc(Descriptor(slot, callIndex, retIndex))
+                    self.bsrAdd(slot, callIndex, index, retIndex )
 
-    def rtn(self, sym, callIndex, index):
-        loc = CallRecord(sym, callIndex)
-        contingentRet = self.contingentReturnSet[loc]
-        added = setAdd(contingentRet, index)
+    def rtn(self, sym, callIndex, retIndex):
+        record = CallRecord(sym, callIndex)
+        retIndices = self.contingentReturnSet[record]
+        added = setAdd(retIndices, retIndex)
         if added:
-            for callRet in self.callReturnForest[loc]:
-                self.addDesc(Descriptor(callRet.slot, callRet.callIndex, index))
-                self.bsrAdd(callRet.slot, callRet.callIndex, callIndex, index)
+            for retAddr in self.callReturnForest[record]:
+                self.addDesc(Descriptor(retAddr.slot, retAddr.callIndex, retIndex))
+                self.bsrAdd(retAddr.slot, retAddr.callIndex, callIndex, retIndex)
 
     def bsrAdd(self, slot, lext, pivot, rext):
         if len(slot.suffix()) == 0:
