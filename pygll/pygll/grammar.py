@@ -47,6 +47,11 @@ class Rule:
     def __len__(self):
         return len(self.rhs)
 
+    def __getitem__(self, idx):
+        if not isinstance(idx, int):
+            raise ValueError("Rule.__getitem__ requires int index")
+        return self.rhs[idx]
+
 @dataclass
 class Grammar:
     start: NonTerm
@@ -71,7 +76,7 @@ class Grammar:
 
     def __getitem__(self, nonterm):
         if not isinstance(nonterm, NonTerm):
-            raise ValueError("Grammar rule lookup must use valid non-terminal")
+            raise ValueError("Grammar.__getitem__ requires non-terminal")
         return self.ruleDict.get(nonterm, set())
 
 # utility functions

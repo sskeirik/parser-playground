@@ -37,6 +37,8 @@ class GrammarSlot:
         return res.strip()
     def __len__(self):
         return len(self.rule)
+    def __getitem__(self, idx):
+        return self.rule[idx]
     def pred(self):
         sym = self.rule.rhs[self.index - 1] if self.index else None
         if sym == None:        raise ValueError("GrammarSlot.pred() requires index > 0")
