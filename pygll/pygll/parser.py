@@ -82,34 +82,44 @@ class CallReturnAddress:
         if self.callIndex < 0:
             raise ValueError("CallReturnAddress callIndex must be non-negative")
 
-@dataclass(frozen=True)
-class BSR: pass
+def validateBSRNode(isTreeNode, node):
+    if not (node.lext <= node.pivot and node.pivot <= node.rext):
+        raise ValueError("BSRNode extents invalid")
+    if isTerm(node.label[-1]) and not (node.pivot + 1 == node.rext):
+        raise ValueError("BSRNode extents are invalid for term-final label")
+    if isTreeNode and len(node.label) < 2:
+        raise ValueError("BSRTreeNode label must have length >= 2")
+    if len(node.label) == 0 and not (node.lext == node.pivot and node.pivot == node.rext):
+        raise ValueError("BSRNode extents are invalid for an empty rule")
+    if len(node.label) == 1 and not (node.lext == node.pivot):
+        raise ValueError("BSRNode extents are invalid for singleton rule")
 
 @dataclass(frozen=True)
-class BSRAltNode(BSR):
+class BSRNode: pass
+
+@dataclass(frozen=True)
+class BSRAltNode(BSRNode):
     label: Rule
     lext: int
     pivot: int
     rext: int
 
     def __post_init__(self):
-        if not (self.lext <= self.pivot and self.pivot <= self.rext):
-            raise ValueError("BSRAltNode extents invalid")
+        validateBSRNode(False, self)
 
     def asdict(self, prettyPrint=False):
         label = repr(self.label) if prettyPrint else asdict(self.label)
         return {'label': label, 'lext': self.lext, 'pivot': self.pivot, 'rext': self.rext}
 
 @dataclass(frozen=True)
-class BSRTreeNode(BSR):
+class BSRTreeNode(BSRNode):
     label: list[Symbol]
     lext: int
     pivot: int
     rext: int
 
     def __post_init__(self):
-        if not (self.lext <= self.pivot and self.pivot <= self.rext):
-            raise ValueError("BSRAltNode extents invalid")
+        validateBSRNode(True, self)
 
     def asdict(self, prettyPrint=False):
         label = repr(self.label) if prettyPrint else [asdict(s) for s in self.label]
@@ -125,7 +135,7 @@ class GLLParser:
     totalSet: set[Descriptor]
     callReturnForest: dict[CallRecord, set[CallReturnAddress]]
     contingentReturnSet: dict[CallRecord, set[int]]
-    bsrSet: set[BSR]
+    bsrSet: set[BSRNode]
 
     def __init__(self, grammar):
         self.grammar = grammar
