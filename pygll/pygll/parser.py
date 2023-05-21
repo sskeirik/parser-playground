@@ -84,34 +84,34 @@ class CallReturnAddress:
 class BSR: pass
 
 @dataclass(frozen=True)
-class BSREndNode(BSR):
-    slot: GrammarSlot
+class BSRAltNode(BSR):
+    label: Rule
     lext: int
     pivot: int
     rext: int
 
     def __post_init__(self):
         if not (self.lext <= self.pivot and self.pivot <= self.rext):
-            raise ValueError("BSREndNode indices invalid")
+            raise ValueError("BSRAltNode extents invalid")
 
     def asdict(self, prettyPrint=False):
-        slot = repr(self.slot) if prettyPrint else asdict(self.slot)
-        return {'slot': slot, 'lext': self.lext, 'pivot': self.pivot, 'rext': self.rext}
+        label = repr(self.label) if prettyPrint else asdict(self.label)
+        return {'label': label, 'lext': self.lext, 'pivot': self.pivot, 'rext': self.rext}
 
 @dataclass(frozen=True)
-class BSRMidNode(BSR):
-    slot: list[Symbol]
+class BSRTreeNode(BSR):
+    label: list[Symbol]
     lext: int
     pivot: int
     rext: int
 
     def __post_init__(self):
         if not (self.lext <= self.pivot and self.pivot <= self.rext):
-            raise ValueError("BSREndNode indices invalid")
+            raise ValueError("BSRAltNode extents invalid")
 
     def asdict(self, prettyPrint=False):
-        slot = repr(self.slot) if prettyPrint else [asdict(s) for s in self.slot]
-        return {'slot': slot, 'lext': self.lext, 'pivot': self.pivot, 'rext': self.rext}
+        label = repr(self.label) if prettyPrint else [asdict(s) for s in self.label]
+        return {'label': label, 'lext': self.lext, 'pivot': self.pivot, 'rext': self.rext}
 
 # GLL Parser
 # ##########
@@ -177,9 +177,9 @@ class GLLParser:
 
     def bsrAdd(self, slot, lext, pivot, rext):
         if len(slot.suffix()) == 0:
-            self.bsrSet.add(BSREndNode(slot, lext, pivot, rext))
+            self.bsrSet.add(BSRAltNode(slot.rule, lext, pivot, rext))
         elif len(slot.prefix()) > 1:
-            self.bsrSet.add(BSRMidNode(slot.prefix(), lext, pivot, rext))
+            self.bsrSet.add(BSRTreeNode(slot.prefix(), lext, pivot, rext))
 
     def getInput(self, index, allowEnd=True):
         if allowEnd and index == len(self.parseInput):
