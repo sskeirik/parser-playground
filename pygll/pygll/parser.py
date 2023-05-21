@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import json
 from collections import defaultdict
 from dataclasses import dataclass, astuple, asdict
 from .grammar import Symbol, Term, NonTerm, isTerm, isNonTerm, Rule, GrammarPredictor
@@ -112,10 +111,6 @@ class BSRAltNode(BSRNode):
     def __post_init__(self):
         validateBSRNode(False, self)
 
-    def asdict(self, prettyPrint=False):
-        label = repr(self.label) if prettyPrint else asdict(self.label)
-        return {'label': label, 'lext': self.lext, 'pivot': self.pivot, 'rext': self.rext}
-
 @dataclass(frozen=True)
 class BSRTreeNode(BSRNode):
     label: list[Symbol]
@@ -125,10 +120,6 @@ class BSRTreeNode(BSRNode):
 
     def __post_init__(self):
         validateBSRNode(True, self)
-
-    def asdict(self, prettyPrint=False):
-        label = repr(self.label) if prettyPrint else [asdict(s) for s in self.label]
-        return {'label': label, 'lext': self.lext, 'pivot': self.pivot, 'rext': self.rext}
 
 # GLL Parser
 # ##########
@@ -145,18 +136,15 @@ class GLLParser:
     def __init__(self, grammar):
         self.grammar = grammar
 
-    def asdict(self, prettyPrint=False):
-        pp = lambda v: repr(v) if prettyPrint else asdict(v)
-        d = dict()
-        d["workingSet"] = list(  pp(desc) for desc in self.workingSet )
-        d["totalSet"]   = list(  pp(desc) for desc in self.totalSet   )
-        d["crf"]        = list( (pp(k), list(pp(v) for v in vs)) for k,vs in self.callReturnForest.items()    if len(vs))
-        d["crs"]        = list( (pp(k), list(vs))                for k,vs in self.contingentReturnSet.items() if len(vs))
-        d["bsrSet"]     = list( v.asdict(prettyPrint) for v in self.bsrSet )
-        return d
-
-    def __repr__(self):
-        return json.dumps(self.asdict(), indent=2)
+    def todict(self):
+        return { "grammar":             self.grammar.todict(),
+                 "parseInput":          [ v.name for v in self.parseInput ],
+                 "totalSet":            { astuple(v) for v in self.totalSet   },
+                 "workingSet":          { astuple(v) for v in self.workingSet },
+                 "callReturnForest":    { astuple(k): { astuple(v) for v in vs } for k,vs in self.callReturnForest.items() },
+                 "contingentReturnSet": { astuple(k): vs for k,vs in self.contingentReturnSet.items() },
+                 "bsrSet":              { astuple(v) for v in self.bsrSet }
+               }
 
     def ntAdd(self, nonterm, index):
         for ruleRhs in self.grammar.grammar[nonterm]:

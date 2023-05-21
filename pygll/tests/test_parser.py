@@ -1,4 +1,6 @@
 from copy import deepcopy
+from pathlib import Path
+import pickle
 import sys
 from pygll.grammar import *
 from pygll.parser import *
@@ -101,27 +103,37 @@ def test_grammar_build():
     print(f_1)
     print(flw_1)
 
-def dump_parser_state(json_state_file, parser):
-    with open(json_state_file, 'w') as f:
-        json.dump(parser.asdict(), f)
+PARSER_TESTS = [
+                 (G3, "abaa", "./inputs/simple_01.pickle"),
+                 (G4, "1+1+1", "./inputs/ambexp_01.pickle")
+               ]
+
+def dump_parser_state():
+    script_dir = Path(__file__).parent.resolve()
+    for grammar, inputstr, json_state_file in PARSER_TESTS:
+        p = init_parser(grammar, inputstr, -1)
+        with open(script_dir / json_state_file, 'wb') as f:
+            pickle.dump(p.todict(), f)
+
+def load_parser_state(json_state_file):
+    script_dir = Path(__file__).parent.resolve()
+    with open(script_dir / json_state_file,'rb') as f:
+        st = pickle.load(f)
+    return st
 
 def validate_parser_state(json_state_file, parser):
-    expected_state = None
-    with open(json_state_file,'r') as f:
-        expected_state = json.load(f)
-    actual_state = parser.asdict()
+    expected_state = load_parser_state(json_state_file)
+    actual_state = parser.todict()
     diff = DeepDiff(expected_state, actual_state)
     if len(diff) != 0:
-        raise ValueError("Parser state does not match expected state:\n" + diff.pretty())
+        raise ValueError(f"Parser state does not match expected state:\n{expected_state}\n{actual_state}\n{diff.pretty()}")
 
-def init_parser(grammar, rawInput):
+def init_parser(grammar, rawInput, steps=0):
     parseInput = [Term(c) for c in rawInput]
     grammarPredictor = GrammarPredictor(deepcopy(grammar))
     gllParser = GLLParser(grammarPredictor)
-    gllParser.parse(parseInput, 0)
+    gllParser.parse(parseInput, steps)
     return gllParser
-
-PARSER_TESTS = [(G4, "1+1+1", "./tests/inputs/amb_exp_01.json")]
 
 @pytest.mark.parametrize("grammar,rawInput,state_file", PARSER_TESTS)
 def test_parser(grammar, rawInput, state_file):

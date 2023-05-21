@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, astuple
 from typing import TypeVar, Callable, Any
 from copy import deepcopy
 
@@ -78,6 +78,11 @@ class Grammar:
         if not isinstance(nonterm, NonTerm):
             raise ValueError("Grammar.__getitem__ requires non-terminal")
         return self.ruleDict.get(nonterm, set())
+
+    def todict(self):
+        return { "start": self.start.name,
+                 "ruleDict": { astuple(nt): { tuple(astuple(sym) for sym in rule) for rule in rules } for nt, rules in self.ruleDict.items() }
+               }
 
 # utility functions
 # #################
@@ -241,3 +246,10 @@ class GrammarPredictor:
         wordFirst = first(self.firstMap, word)
         return ( term in wordFirst ) \
             or ( Epsilon() in wordFirst and term in followMap[nonterm] )
+
+    def todict(self):
+        return { "grammar":   self.grammar.todict(),
+                 "end":       self.end.name,
+                 "firstMap":  { astuple(nt) : { astuple(v) for v in vs } for nt,vs in self.firstMap.items()  },
+                 "followMap": { astuple(nt) : { astuple(v) for v in vs } for nt,vs in self.followMap.items() },
+               }
