@@ -37,10 +37,10 @@ class GrammarSlot:
         return res.strip()
     def __len__(self):
         return len(self.rule)
-    def callee(self):
+    def pred(self):
         sym = self.rule.rhs[self.index - 1] if self.index else None
-        if sym == None:        raise ValueError("GrammarSlot.callee() requires index > 0")
-        if not isNonTerm(sym): raise ValueError("GrammarSlot.callee() requires symbol at index-1 is NonTerm")
+        if sym == None:        raise ValueError("GrammarSlot.pred() requires index > 0")
+        if not isNonTerm(sym): raise ValueError("GrammarSlot.pred() requires symbol at index-1 is NonTerm")
         return sym
     def subject(self):
         return self.rule.rhs[self.index] if self.index < len(self) - 1 else None
@@ -152,7 +152,7 @@ class GLLParser:
             self.totalSet.add(desc)
 
     def call(self, slot, callIndex, index):
-        sym  = slot.callee()
+        sym  = slot.pred()
         loc  = CallRecord(sym, index)
         ret  = CallReturn(slot, callIndex)
         rets = self.callReturnForest[loc]
