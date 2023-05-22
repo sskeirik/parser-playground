@@ -1,6 +1,6 @@
 from copy import deepcopy
 from pathlib import Path
-import pickle
+import cbor2
 import sys
 from pygll.grammar import *
 from pygll.parser import *
@@ -104,8 +104,8 @@ def test_grammar_build():
     print(flw_1)
 
 PARSER_TESTS = [
-                 (G3, "abaa", "./inputs/simple_01.pickle"),
-                 (G4, "1+1+1", "./inputs/ambexp_01.pickle")
+                 (G3, "abaa",  "./inputs/simple_01.cbor"),
+                 (G4, "1+1+1", "./inputs/ambexp_01.cbor"),
                ]
 
 def dump_parser_state():
@@ -113,12 +113,12 @@ def dump_parser_state():
     for grammar, inputstr, json_state_file in PARSER_TESTS:
         p = init_parser(grammar, inputstr, -1)
         with open(script_dir / json_state_file, 'wb') as f:
-            pickle.dump(p.todict(), f)
+            cbor2.dump(p.todict(), f, canonical=True)
 
 def load_parser_state(json_state_file):
     script_dir = Path(__file__).parent.resolve()
     with open(script_dir / json_state_file,'rb') as f:
-        st = pickle.load(f)
+        st = cbor2.load(f)
     return st
 
 def validate_parser_state(json_state_file, parser):
