@@ -104,13 +104,13 @@ def test_grammar_build():
     print(flw_1)
 
 PARSER_TESTS = [
-                 (G3, "abaa",  "./inputs/simple_01.cbor"),
-                 (G4, "1+1+1", "./inputs/ambexp_01.cbor"),
+                 (G3, "abaa",  "./expected/simple_01.cbor"),
+                 (G4, "1+1+1", "./expected/ambexp_01.cbor"),
                ]
 
-def dump_parser_state():
+def regenerate_test_files(parser_tests):
     script_dir = Path(__file__).parent.resolve()
-    for grammar, inputstr, json_state_file in PARSER_TESTS:
+    for grammar, inputstr, json_state_file in parser_tests:
         p = init_parser(grammar, inputstr, -1)
         with open(script_dir / json_state_file, 'wb') as f:
             cbor2.dump(p.todict(), f, canonical=True)
