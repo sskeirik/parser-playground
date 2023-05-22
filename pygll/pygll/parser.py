@@ -220,9 +220,6 @@ class GLLParser:
             desc = self.workingSet.pop()
             slot, callIndex, index = desc.slot, desc.callIndex, desc.index
 
-            # skip epsilon slots (for now)
-            if len(slot) == 0: continue
-
             # grab sym, suffix
             sym = slot.rule.lhs
             suffix = slot.suffix()
