@@ -1,15 +1,15 @@
 from copy import deepcopy
 from pathlib import Path
-import cbor2
 import sys
 from pygll.grammar import *
 from pygll.parser import *
 
 try:
+    import cbor2
     import pytest
     from deepdiff import DeepDiff
 except:
-    print("Package(s) pytest, deepdiff required; try\n$ pip install pytest deepdiff", file=sys.stderr)
+    print("Package(s) cbor2, deepdiff, pytest required; try\n$ pip install cbor2 deepdiff pytest", file=sys.stderr)
     sys.exit(1)
 
 G1 = Grammar(NonTerm("A"),
