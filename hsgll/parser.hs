@@ -3,6 +3,9 @@ module FunPar where
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+-- NOTE: it would be interesting to make hsgll parsers able to emit cbor-encoded state
+--       so that we could compare the pygll and hsgll implementations against each other.
+
 type Set = Set.Set
 type Map = Map.Map
 
