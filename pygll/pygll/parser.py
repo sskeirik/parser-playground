@@ -15,6 +15,11 @@ def setAdd(st, elem):
     st.add(elem)
     return len(st) != i
 
+def dictAdd(dct, key, default):
+    i = len(dct)
+    val = dct.setdefault(key, default)
+    return len(dct) != i, val
+
 # GLL Data Structure
 # ##################
 
@@ -167,13 +172,13 @@ class GLLParser:
         sym = slot.pred()
         record = CallRecord(sym, index)
         retAddr  = CallReturnAddress(slot, callIndex)
-        retAddrSet = self.callReturnForest[record]
-        if len(retAddrSet) == 0:
+        addedCall, retAddrSet = dictAdd(self.callReturnForest, record, set())
+        if addedCall:
             retAddrSet.add(retAddr)
             self.ntAdd(sym, index)
         else:
-            added = setAdd(retAddrSet, retAddr)
-            if added:
+            addedRetAddr = setAdd(retAddrSet, retAddr)
+            if addedRetAddr:
                 for retIndex in self.contingentReturnSet[record]:
                     self.addDesc(Descriptor(slot, callIndex, retIndex))
                     self.bsrAdd(slot, callIndex, index, retIndex )
@@ -206,7 +211,7 @@ class GLLParser:
         self.workingSet = set()
         self.totalSet   = set()
         self.bsrSet     = set()
-        self.callReturnForest = defaultdict(set)
+        self.callReturnForest = { CallRecord(self.grammar.grammar.start, 0): set() }
         self.contingentReturnSet = defaultdict(set)
         self.ntAdd(self.grammar.grammar.start, 0)
         self.continueParse(steps)
