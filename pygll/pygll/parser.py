@@ -78,13 +78,13 @@ class CallRecord:
             raise ValueError("CallRecord index must be non-negative")
 
 @dataclass(frozen=True)
-class CallReturnAddress:
+class CallContinuation:
     slot: GrammarSlot
     callIndex: int
 
     def __post_init__(self):
         if self.callIndex < 0:
-            raise ValueError("CallReturnAddress callIndex must be non-negative")
+            raise ValueError("CallContinuation callIndex must be non-negative")
 
 def validateBSRNode(isTreeNode, node):
     if not (node.lext <= node.pivot and node.pivot <= node.rext):
@@ -129,7 +129,7 @@ class GLLParser:
     parseInput: list[Term]
     workingSet: set[Descriptor]
     totalSet: set[Descriptor]
-    callReturnForest: dict[CallRecord, set[CallReturnAddress]]
+    callReturnForest: dict[CallRecord, set[CallContinuation]]
     contingentReturnSet: dict[CallRecord, set[int]]
     bsrSet: set[BSRNode]
 
@@ -159,14 +159,14 @@ class GLLParser:
     def call(self, slot, callIndex, index):
         sym = slot.pred()
         record = CallRecord(sym, index)
-        retAddr  = CallReturnAddress(slot, callIndex)
-        addedCall, retAddrSet = dictAdd(self.callReturnForest, record, set())
+        cont   = CallContinuation(slot, callIndex)
+        addedCall, contSet = dictAdd(self.callReturnForest, record, set())
         if addedCall:
-            retAddrSet.add(retAddr)
+            contSet.add(cont)
             self.ntAdd(sym, index)
         else:
-            addedRetAddr = setAdd(retAddrSet, retAddr)
-            if addedRetAddr:
+            addedCont = setAdd(contSet, cont)
+            if addedCont:
                 for retIndex in self.contingentReturnSet[record]:
                     self.addDesc(Descriptor(slot, callIndex, retIndex))
                     self.bsrAdd(slot, callIndex, index, retIndex )
